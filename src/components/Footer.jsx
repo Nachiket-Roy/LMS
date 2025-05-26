@@ -1,8 +1,8 @@
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
-
+import { NavLink } from 'react-router-dom';
 const Footer = () => {
   return (
-    <footer className="bg-[#1F2937] text-white pt-10 pb-6 mt-10">
+    <footer className="bg-[#1F2937] text-white pt-10 pb-6 ">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left">
 
@@ -10,19 +10,38 @@ const Footer = () => {
           <div>
             <h5 className="uppercase mb-4 font-bold text-yellow-400">About Us</h5>
             <p className="text-sm text-gray-300">
-              
+
             </p>
           </div>
 
           {/* FAQs */}
+
           <div>
             <h5 className="uppercase mb-4 font-bold text-yellow-400">FAQs</h5>
             <ul className="space-y-2 text-sm text-gray-200">
-              <li><a href="#!" className="hover:text-yellow-300 transition">Help Center</a></li>
-              <li><a href="#!" className="hover:text-yellow-300 transition">Contact Us</a></li>
-              <li><a href="#!" className="hover:text-yellow-300 transition">Cancellation Policy</a></li>
+              <li>
+                <NavLink
+                  to="/faqs"
+                  className={({ isActive }) =>
+                    `transition hover:text-yellow-300 ${isActive ? 'text-yellow-300 font-medium' : ''}`
+                  }
+                >
+                  FAQs
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contact"
+                  className={({ isActive }) =>
+                    `transition hover:text-yellow-300 ${isActive ? 'text-yellow-300 font-medium' : ''}`
+                  }
+                >
+                  Contact Us
+                </NavLink>
+              </li>
             </ul>
           </div>
+
 
           {/* Follow Us */}
           <div>
