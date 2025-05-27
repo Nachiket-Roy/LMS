@@ -8,6 +8,10 @@ import About from './pages/About';
 import ContactUs from './pages/ContactUs'
 import FAQs from './pages/FAQs'
 import Collection from './pages/Collection'
+import Policies from './pages/Policies';
+import UserDashboard from './pages/UserDashBoard/UserPage';
+import LibrarianDashboard from './pages/Librarian/Librarian';
+import AdminDashboard from './pages/Admin/Admin';
 // Layout and pages
 
 
@@ -21,6 +25,10 @@ const router = createBrowserRouter([
       { path: '/contact', element: <ContactUs /> },
       { path: '/faqs', element: <FAQs /> },
       { path: '/collection', element: <Collection /> },
+      { path: '/policies', element: <Policies/>},
+      {path: '/user', element: <UserDashboard/> },
+      {path: '/librarian', element: <LibrarianDashboard/> },
+      {path: '/admin', element: < AdminDashboard />}
     ],
   },
 ]);

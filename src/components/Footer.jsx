@@ -10,7 +10,7 @@ const Footer = () => {
           <div>
             <h5 className="uppercase mb-4 font-bold text-yellow-400">About Us</h5>
             <p className="text-sm text-gray-300">
-
+              At MyLibrary, we're passionate about making knowledge accessible to everyone. Whether you're a student, professional, or lifelong learner, our platform offers a growing collection of curated resources, intuitive tools, and a supportive community. We believe in empowering users through information, innovation, and collaboration.
             </p>
           </div>
 
@@ -66,7 +66,7 @@ const Footer = () => {
         <hr className="my-6 border-gray-600" />
 
         <div className="text-center text-sm text-gray-400">
-          &copy; {new Date().getFullYear()} VIAFlight. All rights reserved.
+          &copy; {new Date().getFullYear()}  All rights reserved.
         </div>
       </div>
     </footer>

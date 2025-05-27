@@ -84,15 +84,6 @@ const About = () => {
         
 
         {/* Call to Action */}
-        <div className="text-center mt-16">
-          <h3 className="text-3xl font-bold text-gray-800 mb-4">Ready to Transform Your Library?</h3>
-          <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-            Join thousands of libraries worldwide that trust our platform to manage their collections efficiently.
-          </p>
-          <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
-            Get Started Today
-          </button>
-        </div>
       </div>
     </div>
   );
