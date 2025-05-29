@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { FaSignInAlt, FaUserPlus, FaShoppingCart } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSignInAlt, FaUserPlus, FaShoppingCart } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 import LoginRegisterCard from '../pages/LoginRegisterCard';
+import { useLocation } from 'react-router-dom';
+
+
 
 const Navbar = () => {
-  const isAuthenticated = 0;
+  const location = useLocation();
+  const pathname = location.pathname;
 
+  let role = 'guest';
+  if (pathname.startsWith('/admin')) {
+    role = 'admin';
+  } else if (pathname.startsWith('/user')) {
+    role = 'user';
+  } else if (pathname.startsWith('/librarian')) {
+    role = 'librarian';
+  }
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // "login" or "register"
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
 
   const handleClose = () => setIsAuthModalOpen(false);
 
@@ -59,7 +75,7 @@ const Navbar = () => {
                 MyLibrary
               </NavLink>
             </span>
-            <span className="text-white text-xl font-bold tracking-wide">
+            {/* <span className="text-white text-xl font-bold tracking-wide">
               <NavLink
                 to="/user"
                 className={({ isActive }) =>
@@ -91,7 +107,14 @@ const Navbar = () => {
               >
                 AdminDashboard
               </NavLink>
-            </span>
+            </span> */}
+          </div>
+
+          {/* Hamburger */}
+          <div className="sm:hidden">
+            <button onClick={toggleMenu} className="text-white text-2xl">
+              {isMenuOpen ? <FaTimes /> : <FaBars />}
+            </button>
           </div>
 
           {/* Center links */}
@@ -115,15 +138,6 @@ const Navbar = () => {
               FAQs
             </NavLink>
             <NavLink
-              to="/policies"
-              className={({ isActive }) =>
-                `transition hover:underline ${isActive ? 'underline font-semibold' : ''
-                }`
-              }
-            >
-              Policies
-            </NavLink>
-            <NavLink
               to="/about"
               className={({ isActive }) =>
                 `transition hover:underline ${isActive ? 'underline font-semibold' : ''
@@ -136,7 +150,7 @@ const Navbar = () => {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            {isAuthenticated == 1 ? (
+            {role === 'user' && (
               <button
                 onClick={() => console.log('Go to cart')}
                 className="flex items-center gap-2 bg-green-500 text-white text-xs sm:text-sm md:text-base px-3 py-1.5 rounded-md hover:bg-yellow-600 transition"
@@ -144,7 +158,9 @@ const Navbar = () => {
                 <FaShoppingCart className="text-sm md:text-base" />
                 Cart
               </button>
-            ) : (
+            )}
+
+            {role === 'guest' && (
               <>
                 <button
                   onClick={() => handleAuthClick('login')}
@@ -162,8 +178,77 @@ const Navbar = () => {
                 </button>
               </>
             )}
+            {role === 'admin' && (
+              <button
+                onClick={() => console.log('Go to cart')}
+                className="flex items-center gap-2 bg-green-500 text-white text-xs sm:text-sm md:text-base px-3 py-1.5 rounded-md hover:bg-yellow-600 transition"
+              >
+                <FaShoppingCart className="text-sm md:text-base" />
+                Cart
+              </button>
+            )}
+            {role === 'librarian' && (
+              <button
+                onClick={() => console.log('Go to cart')}
+                className="flex items-center gap-2 bg-green-500 text-white text-xs sm:text-sm md:text-base px-3 py-1.5 rounded-md hover:bg-yellow-600 transition"
+              >
+                <FaShoppingCart className="text-sm md:text-base" />
+                Cart
+              </button>
+            )}
           </div>
+
         </nav>
+        {/* Mobile Dropdown */}
+        {isMenuOpen && (
+          <div className="sm:hidden bg-purple-800 text-white px-4 py-2 space-y-2">
+            <NavLink
+              to="/contact"
+              onClick={toggleMenu}
+              className={({ isActive }) =>
+                `block hover:underline ${isActive ? 'underline font-semibold' : ''}`
+              }
+            >
+              Contact Us
+            </NavLink>
+            <NavLink
+              to="/faqs"
+              onClick={toggleMenu}
+              className={({ isActive }) =>
+                `block hover:underline ${isActive ? 'underline font-semibold' : ''}`
+              }
+            >
+              FAQs
+            </NavLink>
+            <NavLink
+              to="/about"
+              onClick={toggleMenu}
+              className={({ isActive }) =>
+                `block hover:underline ${isActive ? 'underline font-semibold' : ''}`
+              }
+            >
+              About
+            </NavLink>
+            {role === 'guest' && (
+              <>
+                <button
+                  onClick={() => handleAuthClick('login')}
+                  className="block w-full text-left mt-2 text-white hover:underline"
+                >
+                  <FaSignInAlt className="inline mr-1" />
+                  Login
+                </button>
+                <button
+                  onClick={() => handleAuthClick('register')}
+                  className="block w-full text-left text-white hover:underline"
+                >
+                  <FaUserPlus className="inline mr-1" />
+                  Register
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal */}

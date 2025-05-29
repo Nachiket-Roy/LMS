@@ -474,35 +474,7 @@ const UserDashboard = () => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <div className="flex flex-col h-full pt-20 lg:pt-6">
-            <nav className="flex-1 px-4 space-y-2">
-              {menuItems.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-colors ${
-                      activeTab === item.id
-                        ? 'bg-purple-100 text-purple-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 mr-3" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
+        
 
         {/* Mobile overlay */}
         {isMobileMenuOpen && (

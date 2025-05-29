@@ -632,7 +632,7 @@ const LibrarianDashboard = () => {
               </button>
             </div>
           </div>
-
+          
           {/* Content area */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             {activeTab === 'dashboard' && <DashboardContent />}
@@ -640,7 +640,6 @@ const LibrarianDashboard = () => {
             {activeTab === 'members' && <MembersContent />}
             {activeTab === 'checkouts' && <CheckoutsContent />}
             {activeTab === 'overdue' && <OverdueContent />}
-            {/* Add other content components for remaining tabs */}
           </div>
         </div>
       </div>
