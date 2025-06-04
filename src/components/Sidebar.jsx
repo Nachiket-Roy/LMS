@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { 
-  FaBars, 
-  FaTimes, 
-  FaHome, 
-  FaUser, 
-  FaBook, 
-  FaUsers, 
-  FaCog, 
-  FaChartBar, 
-  FaClipboardList, 
-  FaBookmark, 
-  FaHistory, 
+import {
+  FaBars,
+  FaTimes,
+  FaHome,
+  FaUser,
+  FaBook,
+  FaUsers,
+  FaCog,
+  FaChartBar,
+  FaClipboardList,
+  FaBookmark,
+  FaHistory,
   FaShoppingCart,
   FaUserShield,
   FaBookOpen,
@@ -22,25 +22,30 @@ import {
 } from 'react-icons/fa';
 import { NavLink, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ role = 'user' }) => {
+const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Check if screen is mobile
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(true);
-      } else {
-        setIsSidebarOpen(false);
-      }
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
     };
-
+    
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Track scroll state to match navbar height
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Close sidebar when clicking outside on mobile
@@ -53,11 +58,7 @@ const Sidebar = ({ role = 'user' }) => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobile, isSidebarOpen]);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  }, [isMobile, isSidebarOpen, setIsSidebarOpen]);
 
   // Navigation items based on role
   const getNavigationItems = () => {
@@ -83,9 +84,8 @@ const Sidebar = ({ role = 'user' }) => {
       admin: [
         { path: '/admin/user', icon: FaUsers, label: 'User Management' },
         { path: '/admin/librarian', icon: FaUserShield, label: 'Librarians' },
-        { path: '/admin/categories', icon: FaBookOpen, label: 'Categories' },
-        { path: '/admin/analytics', icon: FaChartBar, label: 'Analytics' },
-        { path: '/admin/system', icon: FaCog, label: 'System Settings' },
+        { path: '/admin/reports', icon: FaChartBar, label: 'Reports' },
+        { path: '/admin/add-book', icon: FaPlus, label: 'Add Book' },
       ]
     };
 
@@ -105,29 +105,46 @@ const Sidebar = ({ role = 'user' }) => {
 
   const roleInfo = getRoleInfo();
 
+  // Calculate navbar height based on current state
+  const getNavbarHeight = () => {
+    const isHomePage = location.pathname === '/' || location.pathname === '/home';
+    
+    if (isHomePage) {
+      return isScrolled ? 'top-16' : 'top-20'; // 4rem (64px) or 5rem (80px)
+    } else {
+      return 'top-16'; // Always 4rem (64px) for non-home pages
+    }
+  };
+
+  const navbarHeight = getNavbarHeight();
+
+  // Calculate sidebar height based on navbar height
+  const getSidebarHeight = () => {
+    const isHomePage = location.pathname === '/' || location.pathname === '/home';
+    
+    if (isHomePage) {
+      return isScrolled ? 'h-[calc(100vh-4rem)]' : 'h-[calc(100vh-5rem)]';
+    } else {
+      return 'h-[calc(100vh-4rem)]';
+    }
+  };
+
+  const sidebarHeight = getSidebarHeight();
+
   return (
     <>
-      {/* Sidebar Toggle Button (Mobile) */}
-      {isMobile && (
-        <button
-          onClick={toggleSidebar}
-          className="sidebar-toggle fixed top-3 left-4 z-50 lg:hidden bg-gray-500 text-white p-3 rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
-          aria-label="Toggle sidebar"
-        >
-          {isSidebarOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
-        </button>
-      )}
-
       {/* Overlay for mobile */}
       {isMobile && isSidebarOpen && (
-        <div className="fixed inset-0    bg-opacity-50 z-40 lg:hidden" />
+        <div className="fixed inset-0 bg-white/40 bg-opacity-50 z-40 lg:hidden" />
       )}
 
       {/* Sidebar */}
       <div
-        className={`sidebar fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b ${roleInfo.bgGradient} text-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}  
+        className={`sidebar fixed ${navbarHeight} left-0 ${sidebarHeight} w-64 bg-gradient-to-b ${roleInfo.bgGradient} text-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
+          isMobile 
+            ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-full')
+            : 'translate-x-0'
+        } lg:translate-x-0`}
       >
         {/* Sidebar Header */}
         <div className="p-6 border-b border-white border-opacity-20">
@@ -149,7 +166,7 @@ const Sidebar = ({ role = 'user' }) => {
           <ul className="space-y-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.exact 
+              const isActive = item.exact
                 ? location.pathname === item.path
                 : location.pathname.startsWith(item.path);
 
@@ -158,16 +175,14 @@ const Sidebar = ({ role = 'user' }) => {
                   <NavLink
                     to={item.path}
                     onClick={() => isMobile && setIsSidebarOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                      isActive
-                        ? 'bg-opacity-20 text-white shadow-md'
-                        : 'text-white text-opacity-80 hover:bg-gray-100 hover:bg-opacity-10 hover:text-black'
-                    }`}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
+                      ? 'bg-white bg-opacity-20 text-white shadow-md'
+                      : 'text-white text-opacity-80 hover:bg-gray-100 hover:bg-opacity-10 hover:text-white'
+                      }`}
                   >
-                    <Icon 
-                      className={`text-lg transition-transform duration-200 ${
-                        isActive ? 'scale-110' : 'group-hover:scale-105'
-                      }`} 
+                    <Icon
+                      className={`text-lg transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'
+                        }`}
                     />
                     <span className="font-medium">{item.label}</span>
                   </NavLink>
@@ -181,16 +196,13 @@ const Sidebar = ({ role = 'user' }) => {
         <div className="p-4 border-t border-white border-opacity-20">
           <NavLink
             to={"/"}
-            className="flex items-center space-x-3 w-full px-4 py-3 text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-black rounded-lg transition-all duration-200 group"
+            className="flex items-center space-x-3 w-full px-4 py-3 text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white rounded-lg transition-all duration-200 group"
           >
             <FaSignOutAlt className="text-lg transition-transform duration-200 group-hover:scale-105" />
             <span className="font-medium">Logout</span>
           </NavLink>
         </div>
       </div>
-
-      {/* Main Content Spacer */}
-      
     </>
   );
 };

@@ -5,10 +5,9 @@ import './index.css';
 import MainLayout from './pages/Layouts/MainLayout';
 import Home from './pages/Home';
 import About from './pages/About';
-import ContactUs from './pages/ContactUs'
+import Contact from './pages/Contact'
 import FAQs from './pages/FAQs'
 import Collection from './pages/Collection'
-import Policies from './pages/Policies';
 import UserPage from './pages/UserDashBoard/UserPage'
 import UserLayout from './pages/Layouts/UserLayout';
 import Browse from './pages/UserDashBoard/Browse';
@@ -37,10 +36,9 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/about', element: <About /> },
-      { path: '/contact', element: <ContactUs /> },
+      { path: '/contact', element: <Contact /> },
       { path: '/faqs', element: <FAQs /> },
       { path: '/collection', element: <Collection /> },
-      { path: '/policies', element: <Policies /> },
     ],
   },
   {
@@ -61,20 +59,24 @@ const router = createBrowserRouter([
     element: <LibrarianLayout />,
     children: [
       { path: 'librarian', element: <LibrarianDashboard /> },
-      { path: 'librarian/add-book', element: <AddBookPage/> },
-      { path: 'librarian/issued-books', element: <IssueBookPage/> },
-      { path: 'librarian/requests', element: <LibraryRequestPage/> },
-      { path: 'librarian/users', element: <UserLibraryDashboard/> },
-      { path: 'librarian/reports', element: <ReportsPage/> },
+      { path: 'librarian/add-book', element: <AddBookPage /> },
+      { path: 'librarian/issued-books', element: <IssueBookPage /> },
+      { path: 'librarian/requests', element: <LibraryRequestPage /> },
+      { path: 'librarian/users', element: <UserLibraryDashboard /> },
+      { path: 'librarian/reports', element: <ReportsPage /> },
     ]
   },
   {
-     path: '/admin',
+    path: '/admin',
     element: <AdminLayout />,
     children: [
       { path: '', element: <AdminDashboard /> },
-      { path: 'user', element: <UserManagement />},
-      { path: 'librarian', element: <LibrarianManagement />}
+      { path: 'user', element: <UserManagement /> },
+      { path: 'librarian', element: <LibrarianManagement /> },
+      { path: 'reports', element: <ReportsPage /> },
+      { path: 'add-book', element: <AddBookPage /> },
+
+
     ]
   }
 ]);
