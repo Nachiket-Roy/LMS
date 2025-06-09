@@ -1,41 +1,53 @@
 import { FaBook, FaBookOpen, FaBookReader, FaSearch, FaUsers, FaChartLine, FaStar, FaHeart, FaBookmark } from "react-icons/fa";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useCallback } from "react";
 
 export default function HeroSection() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isVisible, setIsVisible] = useState(false);
-  const [time, setTime] = useState(0);
   const [animatedCounts, setAnimatedCounts] = useState({ reading: 0, available: 0, upcoming: 0 });
   const [statsAnimatedCounts, setStatsAnimatedCounts] = useState({ users: 0, books: 0 });
+  const [animationTime, setAnimationTime] = useState(0);
 
   const targetCounts = { reading: 78, available: 342, upcoming: 156 };
   const statsTargetCounts = { users: 2400, books: 15000 };
+  const animationFrameRef = useRef(null);
+  const lastMouseEventRef = useRef(0);
+  const animationTimeRef = useRef(0);
 
-  useEffect(() => {
-    setIsVisible(true);
+  // Throttled mouse move handler
 
-    const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
+    const now = Date.now();
+    if (now - lastMouseEventRef.current > 50) {
       setMousePosition({
         x: (e.clientX / window.innerWidth) * 100,
         y: (e.clientY / window.innerHeight) * 100,
       });
-    };
+      lastMouseEventRef.current = now;
+    }
+  }, []);
 
-    // Animation timer
-    const timer = setInterval(() => setTime(prev => prev + 0.01), 16);
+
+  useEffect(() => {
+    setIsVisible(true);
+    const animate = () => {
+      animationTimeRef.current += 0.032;
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+    // Start animation loop
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     // Counter animation for main books
     const animateCounters = () => {
-      const duration = 2000; // 2 seconds
-      const steps = 60; // 60 steps for smooth animation
-      const stepDuration = duration / steps;
-
+      const duration = 2000;
+      const steps = 60;
       let currentStep = 0;
 
       const counterInterval = setInterval(() => {
         currentStep++;
         const progress = currentStep / steps;
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4); // Easing function
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
 
         setAnimatedCounts({
           reading: Math.floor(targetCounts.reading * easeOutQuart),
@@ -45,22 +57,17 @@ export default function HeroSection() {
 
         if (currentStep >= steps) {
           clearInterval(counterInterval);
-          // Ensure final values are exact
-          setAnimatedCounts({
-            reading: targetCounts.reading,
-            available: targetCounts.available,
-            upcoming: targetCounts.upcoming,
-          });
+          setAnimatedCounts(targetCounts);
         }
-      }, stepDuration);
+      }, duration / steps);
+
+      return counterInterval;
     };
 
     // Counter animation for stats
     const animateStatsCounters = () => {
-      const duration = 2500; // 2.5 seconds
+      const duration = 2500;
       const steps = 60;
-      const stepDuration = duration / steps;
-
       let currentStep = 0;
 
       const statsInterval = setInterval(() => {
@@ -75,24 +82,26 @@ export default function HeroSection() {
 
         if (currentStep >= steps) {
           clearInterval(statsInterval);
-          setStatsAnimatedCounts({
-            users: statsTargetCounts.users,
-            books: statsTargetCounts.books,
-          });
+          setStatsAnimatedCounts(statsTargetCounts);
         }
-      }, stepDuration);
+      }, duration / steps);
+
+      return statsInterval;
     };
 
-    // Start animations after a short delay
-    setTimeout(animateCounters, 500);
-    setTimeout(animateStatsCounters, 800);
+    // Start animations after delays
+    const counterIntervalId = setTimeout(animateCounters, 500);
+    const statsIntervalId = setTimeout(animateStatsCounters, 800);
 
     window.addEventListener('mousemove', handleMouseMove);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      clearInterval(timer);
+      cancelAnimationFrame(animationFrameRef.current);
+      clearTimeout(counterIntervalId);
+      clearTimeout(statsIntervalId);
     };
-  }, []);
+  }, [handleMouseMove]);
 
   const features = [
     { icon: FaSearch, text: "Smart Search", delay: "0ms" },
@@ -223,7 +232,7 @@ export default function HeroSection() {
                 style={{
                   left: `${book.x}%`,
                   top: `${book.y}%`,
-                  transform: `translateY(${Math.sin(time * 2 + book.id) * 10}px) rotate(${Math.sin(time + book.id) * 15}deg)`,
+                  transform: `translateY(${Math.sin(animationTime * 2 + book.id) * 10}px) rotate(${Math.sin(animationTime + book.id) * 15}deg)`,
                 }}
               >
                 <book.icon className="w-full h-full drop-shadow-lg" />
@@ -248,14 +257,13 @@ export default function HeroSection() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className={`group relative w-64 h-24 bg-gradient-to-r ${item.color} rounded-2xl shadow-2xl transition-all duration-500 hover:scale-110  overflow-hidden`}
+                  className={`group relative w-64 h-24 bg-gradient-to-r ${item.color} rounded-2xl shadow-2xl transition-all duration-500 hover:scale-110 overflow-hidden`}
                   style={{
-                    transform: `translateX(${Math.sin(time * 0.5 + i) * 15}px) translateY(${Math.cos(time * 0.3 + i) * 8}px) rotateY(${Math.sin(time * 0.2 + i) * 5}deg)`,
+                    transform: `translateX(${Math.sin(animationTime * 0.5 + i) * 15}px) translateY(${Math.cos(animationTime * 0.3 + i) * 8}px) rotateY(${Math.sin(animationTime * 0.2 + i) * 5}deg)`,
                     animationDelay: `${i * 200}ms`,
                     marginTop: i === 0 ? '0' : '-12px'
                   }}
                 >
-                  {/* Animated Background Pattern */}
                   <div className="absolute inset-0 opacity-20">
                     <div className="absolute w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 group-hover:animate-pulse" />
                   </div>
@@ -273,14 +281,11 @@ export default function HeroSection() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold tabular-nums">{item.count}</div>
-                      
                     </div>
                   </div>
 
-                  {/* Hover Glow Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300" />
 
-                  {/* Progress Bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
                     <div
                       className="h-full bg-white/60 transition-all duration-1000"

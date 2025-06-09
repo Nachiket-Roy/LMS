@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { FaSignInAlt, FaUserPlus, FaBell, FaUser, FaUserShield, FaUserTie, FaBook, FaBars, FaTimes, FaCircle, FaCog, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
+import { FaSignInAlt, FaUserPlus, FaUser, FaUserShield, FaUserTie, FaBook, FaBars, FaTimes, FaCog, FaSignOutAlt, FaSpinner } from 'react-icons/fa';
 import { NavLink, useLocation } from 'react-router-dom';
 import LoginRegisterCard from '../pages/LoginRegisterCard';
+import { getProfile } from '../services/userApi';
+import { getProfile as getLibrarianProfile } from '../services/librarianApi';
+import { getProfile as getAdminProfile } from '../services/adminApi';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -9,13 +13,55 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   // Get current location to determine if we're on home page
   const location = useLocation();
   const isHomePage = location.pathname === '/' || location.pathname === '/home';
+  const { logout } = useAuth();
+  // Fetch user profile data based on role
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (role === 'guest') return;
+
+      setLoading(true);
+      try {
+        let res;
+        switch (role) {
+          case 'user':
+            res = await getProfile();
+            break;
+          case 'librarian':
+            res = await getLibrarianProfile();
+            break;
+          case 'admin':
+            res = await getAdminProfile();
+            break;
+          default:
+            return;
+        }
+
+        if (res.data?.success && res.data?.data) {
+          setUserProfile(res.data.data);
+        } else {
+          console.warn('No valid profile data received');
+          setUserProfile(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserProfile(null);
+      } finally {
+        setLoading(false); // ✅ always run this
+      }
+    };
+
+    fetchUserProfile();
+  }, [role]);
+
 
   const handleClose = () => setIsAuthModalOpen(false);
-  
+
   const handleAuthClick = (mode) => {
     setAuthMode(mode);
     if (onAuthClick) {
@@ -38,12 +84,31 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
 
-  const handleLogout = () => {
-    console.log('Logout');
-    setIsUserMenuOpen(false);
-    // Add your logout logic here
-  };
+  const handleLogout = async (e) => {
+    e.preventDefault();
 
+    if (isLoggingOut) return;
+
+    try {
+      setIsLoggingOut(true);
+      setIsUserMenuOpen(false);
+
+      // Clear local state immediately
+      setUserProfile(null);
+
+      // Call the logout function from auth context
+      await logout();
+
+      // Optional: Redirect to home page after logout
+      window.location.href = '/'; // This will cause a full page reload
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Handle error (e.g., show error message to user)
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
   // Handle sidebar toggle
   const handleSidebarToggle = () => {
     if (onSidebarToggle) {
@@ -51,106 +116,43 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
     }
   };
 
-  // Mock notifications data - replace with actual data from your API
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      message: "New book 'JavaScript Mastery' has been added to your wishlist",
-      time: "2 minutes ago",
-      read: false,
-      type: "info"
-    },
-    {
-      id: 2,
-      message: "Your book 'React Fundamentals' is due tomorrow",
-      time: "1 hour ago",
-      read: false,
-      type: "warning"
-    },
-    {
-      id: 3,
-      message: "Successfully returned 'Python Cookbook'",
-      time: "3 hours ago",
-      read: true,
-      type: "success"
-    },
-    {
-      id: 4,
-      message: "New announcement from library administration",
-      time: "1 day ago",
-      read: true,
-      type: "info"
-    },
-    {
-      id: 5,
-      message: "Your reservation for 'Advanced Web Development' is ready",
-      time: "2 days ago",
-      read: false,
-      type: "success"
-    }
-  ]);
-
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const toggleNotifications = () => {
-    setIsNotificationOpen(!isNotificationOpen);
-  };
-
-  const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-  };
-
   // Get role-based avatar styles and icons
   const getRoleAvatar = (userRole) => {
-    switch (userRole) {
-      case 'admin':
-        return {
-          icon: FaUserShield,
-          bgColor: 'bg-gradient-to-r from-red-500 to-red-600',
-          hoverBg: 'hover:from-red-600 hover:to-red-700',
-          shadowColor: 'hover:shadow-red-500/25',
-          name: 'Admin User',
-          email: 'admin@mylibrary.com'
-        };
-      case 'librarian':
-        return {
-          icon: FaUserTie,
-          bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-          hoverBg: 'hover:from-green-600 hover:to-green-700',
-          shadowColor: 'hover:shadow-green-500/25',
-          name: 'Librarian',
-          email: 'librarian@mylibrary.com'
-        };
-      case 'user':
-        return {
-          icon: FaUser,
-          bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
-          hoverBg: 'hover:from-blue-600 hover:to-blue-700',
-          shadowColor: 'hover:shadow-blue-500/25',
-          name: 'Library User',
-          email: 'user@mylibrary.com'
-        };
-      default:
-        return {
-          icon: FaUser,
-          bgColor: 'bg-gradient-to-r from-gray-500 to-gray-600',
-          hoverBg: 'hover:from-gray-600 hover:to-gray-700',
-          shadowColor: 'hover:shadow-gray-500/25',
-          name: 'Guest User',
-          email: 'guest@mylibrary.com'
-        };
-    }
+    const baseConfig = {
+      admin: {
+        icon: FaUserShield,
+        bgColor: 'bg-gradient-to-r from-red-500 to-red-600',
+        hoverBg: 'hover:from-red-600 hover:to-red-700',
+        shadowColor: 'hover:shadow-red-500/25',
+      },
+      librarian: {
+        icon: FaUserTie,
+        bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
+        hoverBg: 'hover:from-green-600 hover:to-green-700',
+        shadowColor: 'hover:shadow-green-500/25',
+      },
+      user: {
+        icon: FaUser,
+        bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
+        hoverBg: 'hover:from-blue-600 hover:to-blue-700',
+        shadowColor: 'hover:shadow-blue-500/25',
+      },
+      guest: {
+        icon: FaUser,
+        bgColor: 'bg-gradient-to-r from-gray-500 to-gray-600',
+        hoverBg: 'hover:from-gray-600 hover:to-gray-700',
+        shadowColor: 'hover:shadow-gray-500/25',
+      }
+    };
+
+    const config = baseConfig[userRole] || baseConfig.guest;
+
+    return {
+      ...config,
+      name: userProfile?.name || userProfile?.full_name || '',
+      email: userProfile?.email || '',
+      avatar: userProfile?.avatar || userProfile?.profile_picture || null
+    };
   };
 
   const roleAvatar = getRoleAvatar(role);
@@ -181,9 +183,6 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
       if (isMobileMenuOpen && !event.target.closest('.mobile-menu') && !event.target.closest('.hamburger-menu')) {
         setIsMobileMenuOpen(false);
       }
-      if (isNotificationOpen && !event.target.closest('.notification-dropdown') && !event.target.closest('.notification-button')) {
-        setIsNotificationOpen(false);
-      }
       if (isUserMenuOpen && !event.target.closest('.user-menu-dropdown') && !event.target.closest('.user-avatar-button')) {
         setIsUserMenuOpen(false);
       }
@@ -191,7 +190,7 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobileMenuOpen, isNotificationOpen, isUserMenuOpen]);
+  }, [isMobileMenuOpen, isUserMenuOpen]);
 
   // Determine navbar background and text colors based on page and scroll state
   const getNavbarStyles = () => {
@@ -250,6 +249,25 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
 
   const navStyles = getNavbarStyles();
 
+  // Render avatar content (image or icon)
+  const renderAvatarContent = () => {
+    if (roleAvatar.avatar) {
+      return (
+        <img
+          src={roleAvatar.avatar}
+          alt="User Avatar"
+          className="w-full h-full rounded-xl object-cover"
+          onError={(e) => {
+            // Fallback to icon if image fails to load
+            e.target.style.display = 'none';
+            e.target.parentNode.querySelector('.fallback-icon').style.display = 'flex';
+          }}
+        />
+      );
+    }
+    return <roleAvatar.icon className="text-lg" />;
+  };
+
   return (
     <>
       <div
@@ -262,8 +280,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
               <button
                 onClick={handleSidebarToggle}
                 className={`sidebar-toggle lg:hidden w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ease-out cursor-pointer hover:scale-105 ${(isHomePage && !isScrolled)
-                    ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+                  ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                   }`}
                 aria-label="Toggle sidebar"
               >
@@ -273,8 +291,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
 
             {/* Logo */}
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ease-out cursor-pointer hover:scale-105 ${(isHomePage && !isScrolled)
-                ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-xl shadow-orange-500/25'
-                : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg'
+              ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-xl shadow-orange-500/25'
+              : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg'
               }`}>
               <FaBook className="text-white text-lg" />
             </div>
@@ -314,104 +332,28 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
 
           {/* Right-side buttons and menus */}
           <div className="flex items-center gap-3">
-            {/* Notification button for logged-in users */}
-            {['user', 'admin', 'librarian'].includes(role) && (
-              <div className="relative">
-                <button
-                  onClick={toggleNotifications}
-                  className={`notification-button relative flex items-center justify-center w-10 h-10 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25'
-                    }`}
-                >
-                  <FaBell className="text-lg" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Notification Dropdown */}
-                <div
-                  className={`notification-dropdown absolute top-full right-0 mt-2 w-80 max-w-[90vw] transition-all duration-200 ease-out ${isNotificationOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-                    } ${(isHomePage && !isScrolled)
-                      ? 'bg-black/90 backdrop-blur-lg border border-white/20'
-                      : 'bg-white/95 backdrop-blur-lg border border-gray-200/50 shadow-lg'
-                    } rounded-xl overflow-hidden`}
-                >
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className={`font-semibold ${(isHomePage && !isScrolled) ? 'text-white' : 'text-gray-900'}`}>
-                        Notifications
-                      </h3>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllAsRead}
-                          className={`text-xs font-medium transition-colors duration-200 ${(isHomePage && !isScrolled) ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
-                        >
-                          Mark all as read
-                        </button>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {notifications.slice(0, 5).map((notification) => (
-                        <div
-                          key={notification.id}
-                          onClick={() => markAsRead(notification.id)}
-                          className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${!notification.read 
-                              ? (isHomePage && !isScrolled) 
-                                ? 'bg-white/10 hover:bg-white/20' 
-                                : 'bg-blue-50 hover:bg-blue-100'
-                              : (isHomePage && !isScrolled)
-                                ? 'bg-white/5 hover:bg-white/10'
-                                : 'bg-gray-50 hover:bg-gray-100'
-                            }`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0 mt-1">
-                              {!notification.read && (
-                                <FaCircle className="text-blue-500 text-xs" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium ${(isHomePage && !isScrolled) ? 'text-white' : 'text-gray-900'} ${!notification.read ? 'font-semibold' : ''}`}>
-                                {notification.message}
-                              </p>
-                              <p className={`text-xs mt-1 ${(isHomePage && !isScrolled) ? 'text-white/70' : 'text-gray-500'}`}>
-                                {notification.time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-3 pt-3 border-t border-gray-200/20">
-                      <button
-                        onClick={() => console.log('View all notifications')}
-                        className={`w-full text-center text-sm font-medium transition-colors duration-200 ${(isHomePage && !isScrolled) ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
-                      >
-                        View all notifications
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* User Avatar Button for logged-in users */}
             {['user', 'admin', 'librarian'].includes(role) && (
               <div className="relative">
                 <button
                   onClick={toggleUserMenu}
-                  className={`user-avatar-button flex items-center justify-center w-10 h-10 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
-                      : `${roleAvatar.bgColor} ${roleAvatar.hoverBg} text-white shadow-lg ${roleAvatar.shadowColor}`
+                  className={`user-avatar-button relative flex items-center justify-center w-10 h-10 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer overflow-hidden ${(isHomePage && !isScrolled)
+                    ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
+                    : `${roleAvatar.bgColor} ${roleAvatar.hoverBg} text-white shadow-lg ${roleAvatar.shadowColor}`
                     }`}
+                  disabled={loading}
                 >
-                  <roleAvatar.icon className="text-lg" />
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <>
+                      {renderAvatarContent()}
+                      {/* Fallback icon (hidden by default, shown if image fails) */}
+                      <div className="fallback-icon absolute inset-0 flex items-center justify-center" style={{ display: roleAvatar.avatar ? 'none' : 'flex' }}>
+                        <roleAvatar.icon className="text-lg" />
+                      </div>
+                    </>
+                  )}
                 </button>
 
                 {/* User Menu Dropdown */}
@@ -425,56 +367,71 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                   <div className="p-4">
                     {/* User Info Section */}
                     <div className="flex items-center gap-3 pb-3 border-b border-gray-200/20">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${roleAvatar.bgColor} shadow-lg`}>
-                        <roleAvatar.icon className="text-white text-lg" />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden relative ${roleAvatar.bgColor} shadow-lg`}>
+                        {loading ? (
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                        ) : roleAvatar.avatar ? (
+                          <>
+                            <img
+                              src={roleAvatar.avatar}
+                              alt="User Avatar"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentNode.querySelector('.dropdown-fallback-icon').style.display = 'flex';
+                              }}
+                            />
+                            <div className="dropdown-fallback-icon absolute inset-0 flex items-center justify-center" style={{ display: 'none' }}>
+                              <roleAvatar.icon className="text-white text-lg" />
+                            </div>
+                          </>
+                        ) : (
+                          <roleAvatar.icon className="text-white text-lg" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`font-semibold truncate ${(isHomePage && !isScrolled) ? 'text-white' : 'text-gray-900'}`}>
-                          {roleAvatar.name}
+                          {loading ? 'Loading...' : (roleAvatar.name || 'User')}
                         </p>
                         <p className={`text-sm truncate ${(isHomePage && !isScrolled) ? 'text-white/70' : 'text-gray-500'}`}>
-                          {roleAvatar.email}
+                          {loading ? 'Please wait...' : (roleAvatar.email || 'No email available')}
                         </p>
                       </div>
                     </div>
 
                     {/* Menu Items */}
                     <div className="py-2 space-y-1">
-                      <a
-                        href="/profile"
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled) 
-                          ? 'text-white hover:bg-white/10' 
+                      <NavLink
+                        to="/user/setting"
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled)
+                          ? 'text-white hover:bg-white/10'
                           : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <FaUserCircle className="text-lg" />
-                        Profile
-                      </a>
-                      <a
-                        href="/settings"
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled) 
-                          ? 'text-white hover:bg-white/10' 
-                          : 'text-gray-700 hover:bg-gray-100'
-                        }`}
+                          }`}
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         <FaCog className="text-lg" />
                         Settings
-                      </a>
+                      </NavLink>
                     </div>
 
                     {/* Logout Section */}
-                    <div className="pt-2 mt-2 border-t border-gray-200/20">
+                    <div className="pt-2 border-t border-gray-200/20">
                       <button
                         onClick={handleLogout}
-                        className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled) 
-                          ? 'text-red-400 hover:bg-red-500/10' 
-                          : 'text-red-600 hover:bg-red-50'
-                        }`}
+                        disabled={isLoggingOut}
+                        className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled)
+                            ? 'text-red-400 hover:bg-red-500/10'
+                            : 'text-red-600 hover:bg-red-50'
+                          } ${isLoggingOut ? 'opacity-50' : ''}`}
                       >
-                        <FaSignOutAlt className="text-lg" />
-                        Logout
+                        {isLoggingOut ? (
+                          <FaSpinner className="animate-spin text-lg" />
+                        ) : (
+                          <>
+                            <FaSignOutAlt className="text-lg" />
+                            Logout
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -488,8 +445,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                 <button
                   onClick={() => handleAuthClick('login')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+                    ? 'bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                     }`}
                 >
                   <FaSignInAlt className="text-sm" />
@@ -498,8 +455,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                 <button
                   onClick={() => handleAuthClick('register')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
                     }`}
                 >
                   <FaUserPlus className="text-sm" />
@@ -513,8 +470,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
               <button
                 onClick={toggleMobileMenu}
                 className={`hamburger-menu md:hidden w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ease-out cursor-pointer hover:scale-105 ${(isHomePage && !isScrolled)
-                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-xl shadow-orange-500/25'
-                    : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg'
+                  ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-xl shadow-orange-500/25'
+                  : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg'
                   }`}
                 aria-label="Toggle navigation menu"
               >
@@ -565,8 +522,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                 <button
                   onClick={() => handleAuthClick('login')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
                     }`}
                 >
                   <FaSignInAlt className="text-sm" />
@@ -576,8 +533,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                 <button
                   onClick={() => handleAuthClick('register')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ease-out hover:scale-105 cursor-pointer ${(isHomePage && !isScrolled)
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-orange-500/25'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-orange-500/25'
                     }`}
                 >
                   <FaUserPlus className="text-sm" />

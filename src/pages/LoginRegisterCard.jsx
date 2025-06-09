@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { FaBook, FaBookOpen, FaUser, FaLock, FaEnvelope, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaArrowLeft } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
+  const { login, register, loading, error, clearError } = useAuth();
+  
   const [currentMode, setCurrentMode] = useState(initialMode);
   const [fadeIn, setFadeIn] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [time, setTime] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -19,6 +24,18 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
   useEffect(() => {
     setFadeIn(true);
   }, []);
+
+  // Clear errors when mode changes
+  useEffect(() => {
+    clearError();
+    setValidationErrors({});
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+  }, [currentMode, clearError]);
 
   // Mouse move handler
   const handleMouseMove = (e) => {
@@ -58,19 +75,109 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
   }, []);
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', { mode: currentMode, data: formData });
+  // Form validation
+  const validateForm = () => {
+    const errors = {};
 
-    if (currentMode === 'forgot') {
-      alert('Password reset instructions have been sent to your email!');
-      setCurrentMode('login');
+    if (currentMode === 'register' && !formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Email is invalid';
+    }
+
+    if (currentMode !== 'forgot') {
+      if (!formData.password) {
+        errors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+      }
+
+      if (currentMode === 'register') {
+        if (!formData.confirmPassword) {
+          errors.confirmPassword = 'Please confirm your password';
+        } else if (formData.password !== formData.confirmPassword) {
+          errors.confirmPassword = 'Passwords do not match';
+        }
+      }
+    }
+
+    return errors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    clearError();
+
+    try {
+      if (currentMode === 'login') {
+        const result = await login({
+          email: formData.email,
+          password: formData.password
+        });
+        
+        if (result.success) {
+          handleClose();
+          // Redirect will be handled by the auth context
+          if (result.redirectTo) {
+            setTimeout(() => {
+              window.location.href = result.redirectTo;
+            }, 100);
+          }
+        }
+      } else if (currentMode === 'register') {
+        const result = await register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        });
+        
+        if (result.success) {
+          // Show success message and switch to login
+          alert('Account created successfully! Please log in.');
+          setCurrentMode('login');
+          setFormData({
+            name: '',
+            email: formData.email, // Keep email for convenience
+            password: '',
+            confirmPassword: ''
+          });
+        }
+      } else if (currentMode === 'forgot') {
+        // TODO: Implement forgot password API call
+        alert('Password reset instructions have been sent to your email!');
+        setCurrentMode('login');
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -177,7 +284,8 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 group z-10"
+          disabled={isSubmitting}
+          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 group z-10 disabled:opacity-50"
           aria-label="Close modal"
         >
           <svg
@@ -199,7 +307,8 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
         {currentMode === 'forgot' && (
           <button
             onClick={handleBackToLogin}
-            className="absolute top-4 left-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 group z-10"
+            disabled={isSubmitting}
+            className="absolute top-4 left-4 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 group z-10 disabled:opacity-50"
             aria-label="Back to login"
           >
             <FaArrowLeft className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -222,6 +331,13 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm relative z-10">
+            {error}
+          </div>
+        )}
+
         {/* Toggle Buttons - Only show for login/register */}
         {currentMode !== 'forgot' && (
           <div className="flex mb-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-1 relative z-10">
@@ -232,6 +348,7 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
                   : 'text-gray-400 hover:text-white'
               }`}
               onClick={() => setCurrentMode('login')}
+              disabled={isSubmitting}
             >
               Login
             </button>
@@ -242,6 +359,7 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
                   : 'text-gray-400 hover:text-white'
               }`}
               onClick={() => setCurrentMode('register')}
+              disabled={isSubmitting}
             >
               Register
             </button>
@@ -249,19 +367,25 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
         )}
 
         {/* Form */}
-        <div className="space-y-5 relative z-10">
+        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
           {currentMode === 'register' && (
             <div className="relative group">
               <input
                 type="text"
-                name="username"
+                name="name"
                 placeholder="Full Name"
-                value={formData.username}
+                value={formData.name}
                 onChange={handleInputChange}
-                className="w-full p-4 pl-12 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10"
+                disabled={isSubmitting}
+                className={`w-full p-4 pl-12 rounded-xl bg-white/5 backdrop-blur-sm border ${
+                  validationErrors.name ? 'border-red-500' : 'border-white/10'
+                } text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10 disabled:opacity-50`}
                 required
               />
               <FaUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-orange-400 transition-colors duration-200" />
+              {validationErrors.name && (
+                <p className="mt-1 text-red-400 text-xs">{validationErrors.name}</p>
+              )}
             </div>
           )}
 
@@ -272,10 +396,16 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
               placeholder="Email Address"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-4 pl-12 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10"
+              disabled={isSubmitting}
+              className={`w-full p-4 pl-12 rounded-xl bg-white/5 backdrop-blur-sm border ${
+                validationErrors.email ? 'border-red-500' : 'border-white/10'
+              } text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10 disabled:opacity-50`}
               required
             />
             <FaEnvelope className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-orange-400 transition-colors duration-200" />
+            {validationErrors.email && (
+              <p className="mt-1 text-red-400 text-xs">{validationErrors.email}</p>
+            )}
           </div>
 
           {currentMode !== 'forgot' && (
@@ -286,17 +416,24 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full p-4 pl-12 pr-12 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10"
+                disabled={isSubmitting}
+                className={`w-full p-4 pl-12 pr-12 rounded-xl bg-white/5 backdrop-blur-sm border ${
+                  validationErrors.password ? 'border-red-500' : 'border-white/10'
+                } text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10 disabled:opacity-50`}
                 required
               />
               <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-orange-400 transition-colors duration-200" />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors duration-200"
+                disabled={isSubmitting}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors duration-200 disabled:opacity-50"
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
+              {validationErrors.password && (
+                <p className="mt-1 text-red-400 text-xs">{validationErrors.password}</p>
+              )}
             </div>
           )}
 
@@ -308,17 +445,24 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full p-4 pl-12 pr-12 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10"
+                disabled={isSubmitting}
+                className={`w-full p-4 pl-12 pr-12 rounded-xl bg-white/5 backdrop-blur-sm border ${
+                  validationErrors.confirmPassword ? 'border-red-500' : 'border-white/10'
+                } text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 group-hover:bg-white/10 disabled:opacity-50`}
                 required
               />
               <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-orange-400 transition-colors duration-200" />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors duration-200"
+                disabled={isSubmitting}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors duration-200 disabled:opacity-50"
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
+              {validationErrors.confirmPassword && (
+                <p className="mt-1 text-red-400 text-xs">{validationErrors.confirmPassword}</p>
+              )}
             </div>
           )}
 
@@ -327,14 +471,16 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
               <label className="flex items-center text-gray-400">
                 <input
                   type="checkbox"
-                  className="mr-2 rounded bg-white/5 border-white/10 text-orange-500 focus:ring-orange-500 focus:ring-2"
+                  disabled={isSubmitting}
+                  className="mr-2 rounded bg-white/5 border-white/10 text-orange-500 focus:ring-orange-500 focus:ring-2 disabled:opacity-50"
                 />
                 <span>Remember me</span>
               </label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-orange-400 hover:text-orange-300 font-medium transition-colors duration-200"
+                disabled={isSubmitting}
+                className="text-orange-400 hover:text-orange-300 font-medium transition-colors duration-200 disabled:opacity-50"
               >
                 Forgot password?
               </button>
@@ -349,16 +495,28 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
 
           <button
             type="submit"
-            className="group relative w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-orange-500/25"
+            disabled={isSubmitting}
+            className="group relative w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-orange-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <span className="relative z-10">
-              {currentMode === 'login' && 'Sign In'}
-              {currentMode === 'register' && 'Create Account'}
-              {currentMode === 'forgot' && 'Send Reset Link'}
+            <span className="relative z-10 flex items-center justify-center">
+              {isSubmitting && (
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {isSubmitting 
+                ? 'Please wait...' 
+                : currentMode === 'login' 
+                  ? 'Sign In'
+                  : currentMode === 'register'
+                    ? 'Create Account'
+                    : 'Send Reset Link'
+              }
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-500 rounded-xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
           </button>
-        </div>
+        </form>
 
         {/* Social Login - Only show for login/register */}
         {currentMode !== 'forgot' && (
@@ -368,8 +526,7 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
               <span className="px-4 text-gray-400 text-sm">or continue with</span>
               <div className="border-t border-white/20 flex-grow"></div>
             </div>
-
-            
+            {/* Social buttons can be added here */}
           </div>
         )}
 
@@ -379,7 +536,8 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
             <button
               type="button"
               onClick={handleBackToLogin}
-              className="text-orange-400 hover:text-orange-300 font-medium text-sm transition-colors duration-200"
+              disabled={isSubmitting}
+              className="text-orange-400 hover:text-orange-300 font-medium text-sm transition-colors duration-200 disabled:opacity-50"
             >
               Back to Login
             </button>
