@@ -549,7 +549,7 @@ const SettingsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Page Header */}
-          <div className="bg-white rounded-xl shadow-sm border p-8 mb-8">
+          <div className=" rounded-xl   p-8 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="bg-purple-600 text-white rounded-full p-3">

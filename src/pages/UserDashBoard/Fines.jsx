@@ -154,7 +154,7 @@ const FinesPaymentsPage = () => {
 
   // Calculate fine based on days overdue (adjust rate as needed)
   const calculateFine = (daysOverdue) => {
-    const dailyRate = 0.50; // $0.50 per day - adjust this rate as needed
+    const dailyRate = 5; // ₹5 per day - adjust this rate as needed
     return Math.max(daysOverdue * dailyRate, 0);
   };
 
@@ -373,7 +373,7 @@ const FinesPaymentsPage = () => {
         <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 lg:px-8">
 
           {/* Page Header */}
-          <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+          <div className=" rounded-xl  p-4 sm:p-6">
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
@@ -382,14 +382,7 @@ const FinesPaymentsPage = () => {
                 </h1>
                 <p className="text-gray-600 mt-2">Manage your library fines and payment history</p>
               </div>
-              <button
-                onClick={fetchAllData}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors disabled:opacity-50"
-              >
-                <FaSpinner className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
+              
             </div>
           </div>
 
@@ -399,7 +392,7 @@ const FinesPaymentsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm">Outstanding Fines</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-orange-600">${paymentStats.totalOutstandingFines.toFixed(2)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-orange-600">₹{paymentStats.totalOutstandingFines.toFixed(2)}</p>
                 </div>
                 <FaExclamationTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
               </div>
@@ -409,7 +402,7 @@ const FinesPaymentsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm">Total Paid</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-green-600">${paymentStats.totalPaid.toFixed(2)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-green-600">₹{paymentStats.totalPaid.toFixed(2)}</p>
                 </div>
                 <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
               </div>
@@ -419,7 +412,7 @@ const FinesPaymentsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm">Total Fines</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-purple-600">${paymentStats.totalFines.toFixed(2)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-purple-600">₹{paymentStats.totalFines.toFixed(2)}</p>
                 </div>
                 <FaClock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
               </div>
@@ -476,16 +469,16 @@ const FinesPaymentsPage = () => {
 
           {/* Quick Pay Section */}
           {selectedFines.length > 0 && (
-            <div className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-xl shadow-sm p-4 sm:p-6 text-white">
+            <div className="bg-black rounded-xl shadow-sm p-4 sm:p-6 text-white">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold">{selectedFines.length} fine(s) selected</h3>
-                  <p className="text-purple-100">Total: ${getSelectedTotal().toFixed(2)}</p>
+                  <p className="text-purple-100">Total: ₹{getSelectedTotal().toFixed(2)}</p>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSelectedFines([])}
-                    className="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-all"
+                    className="px-4 py-2 bg-white  text-purple-600 bg-opacity-20 rounded-lg hover:bg-gray-100 transition-all"
                   >
                     Clear Selection
                   </button>
@@ -577,7 +570,7 @@ const FinesPaymentsPage = () => {
                           {/* Amount and Dates */}
                           <div className="lg:text-right lg:min-w-0 lg:w-48">
                             <div className="text-2xl font-bold text-red-600 mb-2">
-                              ${fine.amount.toFixed(2)}
+                              ₹{fine.amount.toFixed(2)}
                             </div>
 
                             <div className="space-y-1 text-sm text-gray-600">
@@ -625,7 +618,7 @@ const FinesPaymentsPage = () => {
                     <div className="flex items-center gap-3">
                       {getPaymentMethodIcon(payment.method)}
                       <div>
-                        <p className="font-medium">${(payment.amount || 0).toFixed(2)}</p>
+                        <p className="font-medium">₹{(payment.amount || 0).toFixed(2)}</p>
                         <p className="text-sm text-gray-600">
                           {payment.method?.toUpperCase()} Payment
                         </p>

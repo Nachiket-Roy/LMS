@@ -68,41 +68,51 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   // Check authentication status on app load
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        dispatch({ type: 'SET_LOADING', payload: true });
-        const userData = await authApi.checkAuth();
-        if (userData?.user) {
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: { user: userData.user }
-          });
-        } else {
-          dispatch({ type: 'LOGOUT' });
+  const initializeAuth = useCallback(async () => {
+    const publicRoutes = ['/', '/about', '/contact', '/faqs', '/collection'];
+    const currentPath = window.location.pathname;
+    const hasAccessToken = document.cookie.includes('accessToken=');
+
+    // Skip only if no token AND on a public route
+    if (publicRoutes.includes(currentPath) && !hasAccessToken) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const userData = await authApi.checkAuth();
+
+      if (userData?.user) {
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { user: userData.user }
+        });
+
+        // If logged in and on public route, redirect based on role
+        if (publicRoutes.includes(currentPath)) {
+          const role = userData.user.role;
+          if (role === 'user') window.location.href = '/user';
+          else if (role === 'librarian') window.location.href = '/librarian';
+          else if (role === 'admin') window.location.href = '/admin';
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
+      } else {
         dispatch({ type: 'LOGOUT' });
-      } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
       }
-    };
-
-    initializeAuth();
-
-    // Set up silent refresh interval (optional)
-    const refreshInterval = setInterval(() => {
-      authApi.silentRefresh().catch(() => {
-        // Silent refresh failed, don't do anything
-        // The next API call will trigger a proper refresh or logout
-      });
-    }, 300000); // Check every 5 minutes
-
-    return () => clearInterval(refreshInterval);
+    } catch (error) {
+      console.error('Auth initialization failed:', error);
+      dispatch({ type: 'LOGOUT' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   }, []);
 
-  const checkAuthStatus = async () => {
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  const checkAuthStatus = useCallback(async () => {
     try {
       const userData = await authApi.checkAuth();
       if (userData?.user) {
@@ -117,9 +127,9 @@ export const AuthProvider = ({ children }) => {
       console.error('Auth check failed:', error);
       logout();
     }
-  };
+  }, []);
 
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     try {
       dispatch({ type: 'LOGIN_START' });
       const response = await authApi.login(credentials);
@@ -135,7 +145,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       let errorMsg = error.message;
       if (error.response) {
-        errorMsg = error.response.data.message || errorMsg;
+        errorMsg = error.response.data?.message || errorMsg;
         if (error.response.status === 429) {
           errorMsg = 'Too many attempts. Please try again later.';
         }
@@ -148,13 +158,13 @@ export const AuthProvider = ({ children }) => {
 
       return { success: false, error: errorMsg };
     }
-  };
+  }, []);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       const response = await authApi.register(userData);
-      
+
       if (response.autoLogin) {
         dispatch({
           type: 'LOGIN_SUCCESS',
@@ -175,9 +185,9 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: false });
       return { success: false, error: errorMsg };
     }
-  };
+  }, []);
 
-  const logout = async (allDevices = false) => {
+  const logout = useCallback(async (allDevices = false) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       await authApi.logout(allDevices);
@@ -187,15 +197,15 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'LOGOUT' });
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
-  const updateUser = (userData) => {
+  const updateUser = useCallback((userData) => {
     dispatch({ type: 'UPDATE_USER', payload: userData });
-  };
+  }, []);
 
   const value = {
     ...state,
@@ -251,9 +261,9 @@ export const withAuth = (WrappedComponent, { allowedRoles = [], redirectTo = '/'
 };
 
 // Enhanced Route guard component
-export const ProtectedRoute = ({ 
-  children, 
-  allowedRoles = [], 
+export const ProtectedRoute = ({
+  children,
+  allowedRoles = [],
   redirectTo = '/',
   loadingComponent = <div>Loading...</div>,
   unauthorizedComponent = <div>Unauthorized</div>

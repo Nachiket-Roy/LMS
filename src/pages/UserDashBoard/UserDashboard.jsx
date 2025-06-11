@@ -48,6 +48,7 @@ const UserDashboard = () => {
   const [borrowedBooks, setBorrowedBooks] = useState([]);
   const [overdueBooks, setOverdueBooks] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [allNotifications, setAllNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [dashboardSummary, setDashboardSummary] = useState(null);
   const [paymentData, setPaymentData] = useState(null);
@@ -56,9 +57,13 @@ const UserDashboard = () => {
   const [renewLoading, setRenewLoading] = useState({});
   const [notification, setNotification] = useState(null);
   const [showRenewModal, setShowRenewModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [bookToRenew, setBookToRenew] = useState(null);
   const [error, setError] = useState(null);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsPage, setNotificationsPage] = useState(1);
+  
 
   // Fetch all dashboard data
   useEffect(() => {
@@ -157,6 +162,39 @@ const UserDashboard = () => {
     }
   };
 
+  const fetchAllNotifications = async (page = 1) => {
+    try {
+      setNotificationsLoading(true);
+      const response = await getNotifications(page, 20);
+      
+      if (response?.data?.success) {
+        const notifData = response.data.data || [];
+        if (page === 1) {
+          setAllNotifications(Array.isArray(notifData) ? notifData : []);
+        } else {
+          setAllNotifications(prev => [...prev, ...(Array.isArray(notifData) ? notifData : [])]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching all notifications:', error);
+      showNotification('Failed to load notifications', 'error');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const openNotificationsModal = () => {
+    setShowNotificationsModal(true);
+    setNotificationsPage(1);
+    fetchAllNotifications(1);
+  };
+
+  const loadMoreNotifications = () => {
+    const nextPage = notificationsPage + 1;
+    setNotificationsPage(nextPage);
+    fetchAllNotifications(nextPage);
+  };
+
   const refreshDashboard = async () => {
     setRefreshing(true);
     await fetchDashboardData();
@@ -200,16 +238,27 @@ const UserDashboard = () => {
     }
   };
 
-  const handleMarkAsRead = async (notificationId) => {
+  const handleMarkAsRead = async (notificationId, updateModal = false) => {
     try {
       const response = await markNotificationAsRead(notificationId);
       
       if (response?.data?.success) {
+        // Update main notifications
         setNotifications(prev =>
           prev.map(notif =>
             notif._id === notificationId ? { ...notif, is_read: true } : notif
           )
         );
+        
+        // Update modal notifications if needed
+        if (updateModal) {
+          setAllNotifications(prev =>
+            prev.map(notif =>
+              notif._id === notificationId ? { ...notif, is_read: true } : notif
+            )
+          );
+        }
+        
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -225,6 +274,9 @@ const UserDashboard = () => {
       
       if (response?.data?.success) {
         setNotifications(prev =>
+          prev.map(notif => ({ ...notif, is_read: true }))
+        );
+        setAllNotifications(prev =>
           prev.map(notif => ({ ...notif, is_read: true }))
         );
         setUnreadCount(0);
@@ -287,6 +339,22 @@ const UserDashboard = () => {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
+
+  // Format date with time
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } catch (error) {
       return 'Invalid Date';
@@ -380,6 +448,22 @@ const UserDashboard = () => {
             {book.status?.replace('_', ' ') || 'Unknown'}
           </span>
         );
+    }
+  };
+
+  // Get notification type icon and color
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'overdue':
+        return { icon: FaExclamationTriangle, color: 'text-red-500' };
+      case 'due_soon':
+        return { icon: FaClock, color: 'text-yellow-500' };
+      case 'approved':
+        return { icon: FaCheckCircle, color: 'text-green-500' };
+      case 'returned':
+        return { icon: FaCheckCircle, color: 'text-blue-500' };
+      default:
+        return { icon: FaBell, color: 'text-gray-500' };
     }
   };
 
@@ -590,12 +674,9 @@ const UserDashboard = () => {
 
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FaDollarSign className="h-8 w-8 text-red-600" />
-                  </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Outstanding Fines</p>
-                    <p className="text-2xl font-bold text-gray-900">${(displayStats.totalFines || 0).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-gray-900">₹{(displayStats.totalFines || 0).toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -651,242 +732,356 @@ const UserDashboard = () => {
                     .slice(0, 4)
                     .map((borrow) => renderBookCard(borrow))}
 
-                  {borrowedBooks.filter(book => ['approved', 'issued', 'borrowed', 'renewed'].includes(book.status)).length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <FaBook className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>No books currently issued</p>
-                      <NavLink
-                        to="/user/browse"
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block"
-                      >
-                        Browse and request books
-                      </NavLink>
+                  {borrowedBooks                    .filter(book => ['approved', 'issued', 'borrowed', 'renewed'].includes(book.status))
+                    .length === 0 && (
+                    <div className="text-center py-8">
+                      <FaBookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No books currently issued</h3>
+                      <p className="mt-1 text-sm text-gray-500">You don't have any books issued at the moment.</p>
+                      <div className="mt-6">
+                        <NavLink
+                          to="/user/browse"
+                          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <FaSearch className="-ml-1 mr-2 h-5 w-5" />
+                          Browse Books
+                        </NavLink>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Recent Notifications */}
+              {/* Overdue Books */}
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Recent Notifications</h2>
-                  <div className="flex gap-2">
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={handleMarkAllAsRead}
-                        disabled={markingAllRead}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50"
-                      >
-                        {markingAllRead ? 'Marking...' : 'Mark All Read'}
-                      </button>
-                    )}
-                    
-                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">Overdue Books</h2>
+                  {overdueBooks.length > 0 && (
+                    <NavLink
+                      to="/user/mybooks"
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View All
+                    </NavLink>
+                  )}
                 </div>
                 <div className="space-y-4">
-                  {notifications.slice(0, 5).map((notif) => (
-                    <div
-                      key={notif._id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                        notif.is_read ? 'bg-white' : 'bg-blue-50 border-blue-200'
-                      }`}
-                      onClick={() => !notif.is_read && handleMarkAsRead(notif._id)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className={`font-medium ${notif.is_read ? 'text-gray-700' : 'text-gray-900'}`}>
-                            {notif.title || notif.message}
-                          </h3>
-                          {notif.description && (
-                            <p className="text-sm text-gray-600 mt-1">{notif.description}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {formatDate(notif.createdAt || notif.date)}
-                          </p>
-                        </div>
-                        
-                      </div>
-                    </div>
-                  ))}
+                  {overdueBooks.slice(0, 4).map((borrow) => {
+                    const daysOverdue = calculateDaysOverdue(borrow.dueDate);
+                    return (
+                      <div key={borrow._id} className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start space-x-4">
+                          {/* Book Cover */}
+                          <div className="flex-shrink-0">
+                            {borrow.book_id?.coverImagePath ? (
+                              <img
+                                src={borrow.book_id.coverImagePath}
+                                alt={borrow.book_id.title || 'Book'}
+                                className="w-16 h-24 object-cover rounded shadow-sm"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  if (e.target.nextElementSibling) {
+                                    e.target.nextElementSibling.style.display = 'flex';
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <PlaceholderBookCover
+                              title={borrow.book_id?.title}
+                              className={`w-16 h-24 ${borrow.book_id?.coverImagePath ? 'hidden' : ''}`}
+                            />
+                          </div>
 
-                  {notifications.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <FaBell className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>No notifications</p>
+                          {/* Book Info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 truncate">
+                              {borrow.book_id?.title || 'Unknown Title'}
+                            </h3>
+                            <p className="text-sm text-gray-600 truncate">
+                              by {borrow.book_id?.author || 'Unknown Author'}
+                            </p>
+                            
+                            {/* Status Badge */}
+                            <div className="mt-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <FaExclamationTriangle className="mr-1" />
+                                {daysOverdue} days overdue
+                              </span>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="mt-2 flex justify-between text-xs text-gray-500">
+                              <span>Due: {formatDate(borrow.dueDate)}</span>
+                              <span>Fine: ₹{(daysOverdue * 5).toFixed(2)}</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex-shrink-0 text-right">
+                            <button
+                              onClick={() => {
+                                setBookToRenew(borrow);
+                                setShowRenewModal(true);
+                              }}
+                              disabled={renewLoading[borrow._id]}
+                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              {renewLoading[borrow._id] ? (
+                                <>
+                                  <FiLoader className="animate-spin w-3 h-3" />
+                                  Renewing...
+                                </>
+                              ) : (
+                                <>
+                                  <FaRedo className="w-3 h-3" />
+                                  Renew
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {overdueBooks.length === 0 && (
+                    <div className="text-center py-8">
+                      <FaCheckCircle className="mx-auto h-12 w-12 text-green-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No overdue books</h3>
+                      <p className="mt-1 text-sm text-gray-500">You don't have any overdue books. Keep it up!</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            
-            {/* Overdue Books Section - Only show if there are overdue books */}
-            {overdueBooks.length > 0 && (
-              <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-red-800 flex items-center gap-2">
-                    <FaExclamationTriangle className="h-5 w-5" />
-                    Overdue Books - Action Required
-                  </h2>
+            {/* Recent Notifications */}
+            <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Notifications</h2>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    disabled={unreadCount === 0 || markingAllRead}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {markingAllRead ? (
+                      <span className="flex items-center gap-1">
+                        <FiLoader className="animate-spin w-3 h-3" />
+                        Marking all...
+                      </span>
+                    ) : (
+                      'Mark All as Read'
+                    )}
+                  </button>
+                  <button
+                    onClick={openNotificationsModal}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    View All
+                  </button>
                 </div>
-                <div className="space-y-3">
-                  {overdueBooks.slice(0, 3).map((overdue) => (
-                    <div key={overdue._id} className="bg-white border border-red-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">
-                            {overdue.book?.title || overdue.bookTitle || 'Unknown Title'}
-                          </h3>
-                          <p className="text-sm text-red-600">
-                            {overdue.daysOverdue || 0} days overdue
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Due: {formatDate(overdue.dueDate)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-red-600">
-                            ${(overdue.fineAmount || 0).toFixed(2)}
-                          </p>
-                          <button className="mt-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
-                            Pay Fine
-                          </button>
+              </div>
+              <div className="space-y-4">
+                {notifications.length > 0 ? (
+                  notifications.slice(0, 5).map((notification) => {
+                    const { icon: Icon, color } = getNotificationIcon(notification.type);
+                    return (
+                      <div
+                        key={notification._id}
+                        className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50'} hover:shadow-sm transition-shadow cursor-pointer`}
+                        onClick={() => handleMarkAsRead(notification._id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 mt-1 ${color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {notification.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              {formatDateTime(notification.createdAt)}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <div className="flex-shrink-0">
+                              <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                                    {overdueBooks.length > 3 && (
-                    <div className="text-center pt-2">
-                      <NavLink
-                        to="/user/overdue-books"
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        View all {overdueBooks.length} overdue books
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Pending Requests Section */}
-            {borrowedBooks.filter(book => ['pending', 'requested'].includes(book.status)).length > 0 && (
-              <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
-                    <FaClock className="h-5 w-5" />
-                    Pending Requests
-                  </h2>
-                </div>
-                <div className="space-y-3">
-                  {borrowedBooks
-                    .filter(book => ['pending', 'requested'].includes(book.status))
-                    .slice(0, 3)
-                    .map((request) => {
-                      const book = request.book || request.book_id || {};
-                      return (
-                        <div key={request._id} className="bg-white border border-yellow-200 rounded-lg p-4">
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0 mr-4">
-                              {book.coverImagePath ? (
-                                <img
-                                  src={book.coverImagePath}
-                                  alt={book.title || 'Book'}
-                                  className="w-12 h-16 object-cover rounded shadow-sm"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextElementSibling.style.display = 'flex';
-                                  }}
-                                />
-                              ) : null}
-                              <PlaceholderBookCover
-                                title={book.title}
-                                className={`w-12 h-16 ${book.coverImagePath ? 'hidden' : ''}`}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-900">
-                                {book.title || 'Unknown Title'}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Requested on: {formatDate(request.requestDate || request.createdAt)}
-                              </p>
-                              <div className="mt-1">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  {request.status === 'pending' ? 'Pending Approval' : 'Requested'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  {borrowedBooks.filter(book => ['pending', 'requested'].includes(book.status)).length > 3 && (
-                    <div className="text-center pt-2">
-                      <NavLink
-                        to="/user/borrow-requests"
-                        className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
-                      >
-                        View all {borrowedBooks.filter(book => ['pending', 'requested'].includes(book.status)).length} pending requests
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Renew Confirmation Modal */}
-            {showRenewModal && bookToRenew && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Confirm Renewal</h3>
-                    <button
-                      onClick={() => setShowRenewModal(false)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <FaTimes />
-                    </button>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <FaBell className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
+                    <p className="mt-1 text-sm text-gray-500">You don't have any notifications yet.</p>
                   </div>
-                  <div className="mb-4">
-                    <p className="text-gray-700">
-                      Are you sure you want to request a renewal for:
-                    </p>
-                    <p className="font-semibold mt-2">
-                      {bookToRenew.book?.title || bookToRenew.book_id?.title || 'Unknown Book'}?
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Current due date: {formatDate(bookToRenew.dueDate)}
-                    </p>
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setShowRenewModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={confirmRenewal}
-                      disabled={renewLoading[bookToRenew._id]}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {renewLoading[bookToRenew._id] ? (
-                        <>
-                          <FiLoader className="animate-spin inline mr-2" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Confirm Renewal'
-                      )}
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Renew Book Modal */}
+      {showRenewModal && bookToRenew && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Renewal</h3>
+              <button
+                onClick={() => setShowRenewModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <FaTimes className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to request renewal for{' '}
+                <span className="font-semibold">{bookToRenew.book_id?.title || 'this book'}</span>?
+              </p>
+              <div className="bg-blue-50 p-4 rounded-md">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <FaInfoCircle className="flex-shrink-0" />
+                  <p className="text-sm">
+                    Renewal requests must be approved by the librarian. You can only renew a book once.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowRenewModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRenewal}
+                disabled={renewLoading[bookToRenew._id]}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {renewLoading[bookToRenew._id] ? (
+                  <span className="flex items-center gap-2">
+                    <FiLoader className="animate-spin w-4 h-4" />
+                    Processing...
+                  </span>
+                ) : (
+                  'Confirm Renewal'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Modal */}
+      {showNotificationsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center border-b p-4">
+              <h3 className="text-lg font-semibold text-gray-900">All Notifications</h3>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleMarkAllAsRead}
+                  disabled={unreadCount === 0 || markingAllRead}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {markingAllRead ? (
+                    <span className="flex items-center gap-1">
+                      <FiLoader className="animate-spin w-3 h-3" />
+                      Marking all...
+                    </span>
+                  ) : (
+                    'Mark All as Read'
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowNotificationsModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <FaTimes className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {allNotifications.length > 0 ? (
+                <div className="space-y-3">
+                  {allNotifications.map((notification) => {
+                    const { icon: Icon, color } = getNotificationIcon(notification.type);
+                    return (
+                      <div
+                        key={notification._id}
+                        className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50'} hover:shadow-sm transition-shadow cursor-pointer`}
+                        onClick={() => handleMarkAsRead(notification._id, true)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 mt-1 ${color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {notification.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              {formatDateTime(notification.createdAt)}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <div className="flex-shrink-0">
+                              <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FaBell className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
+                  <p className="mt-1 text-sm text-gray-500">You don't have any notifications yet.</p>
+                </div>
+              )}
+              {notificationsLoading && (
+                <div className="flex justify-center py-4">
+                  <FiLoader className="animate-spin w-6 h-6 text-blue-600" />
+                </div>
+              )}
+            </div>
+            <div className="border-t p-4 flex justify-center">
+              <button
+                onClick={loadMoreNotifications}
+                disabled={notificationsLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {notificationsLoading ? (
+                  <>
+                    <FiLoader className="animate-spin w-4 h-4" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <FaDownload className="w-4 h-4" />
+                    Load More
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

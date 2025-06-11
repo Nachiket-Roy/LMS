@@ -356,7 +356,7 @@ const Home = () => {
           </section>
 
           {/* Testimonials Section */}
-          <section className="py-16 bg-white">
+          <section className="py-16 bg-[#e5e5e5]">
             <div className="max-w-5xl mx-auto px-6">
               <div className="text-center mb-16">
                 <h2 className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
@@ -392,7 +392,7 @@ const Home = () => {
           </section>
 
           {/* Newsletter Section */}
-          <section className="py-16 bg-[#e5e5e5]">
+          {/* <section className="py-16 bg-[#e5e5e5]">
             <div className="max-w-4xl mx-auto px-6 text-center">
               <div className="mb-12">
                 <h2 className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
@@ -429,7 +429,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
-          </section>
+          </section> */}
         </>
       )}
     </>

@@ -15,15 +15,15 @@ import FinesPaymentsPage from './pages/UserDashBoard/Fines';
 import SettingsPage from './pages/UserDashBoard/Setting';
 import MyBooksPage from './pages/UserDashBoard/MyBook';
 import LibrarianDashboard from './pages/Librarian/Librarian';
-import AddBookPage from './pages/Librarian/AddBook';
-import IssueBookPage from './pages/Librarian/IssuedBooks';
 import ReportsPage from './pages/Librarian/Report';
-import LibraryRequestPage from './pages/Librarian/Requests';
-import UserLibraryDashboard from './pages/Librarian/Users';
 import AdminDashboard from './pages/Admin/Admin';
 import UserManagement from './pages/Admin/UserManagement';
 import LibrarianManagement from './pages/Admin/LibrarianManagement';
 import Query from './pages/UserDashBoard/Query';
+import LibrarianSettingsPage from './pages/Librarian/Setting';
+import QueryManagement from './pages/Librarian/QueryManagement';
+import BookManagementPage from './pages/Librarian/BookManagement';
+import BorrowNotificationPage from './pages/Librarian/BorrowNotificationPage';
 
 const router = createBrowserRouter([
   {
@@ -68,11 +68,11 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
-      { path: 'librarian/add-book', element: <AddBookPage /> },
-      { path: 'librarian/issued-books', element: <IssueBookPage /> },
-      { path: 'librarian/requests', element: <LibraryRequestPage /> },
-      { path: 'librarian/users', element: <UserLibraryDashboard /> },
-      { path: 'librarian/reports', element: <ReportsPage /> }
+      { path: 'librarian/manage', element: <BookManagementPage /> },
+      { path: 'librarian/requests', element: <BorrowNotificationPage /> },
+      { path: 'librarian/query', element: < QueryManagement /> },
+      { path: 'librarian/reports', element: <ReportsPage /> },
+      { path: 'librarian/setting', element: <LibrarianSettingsPage /> }
     ]
   },
   {

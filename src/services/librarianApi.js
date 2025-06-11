@@ -1,52 +1,57 @@
-import api from './api';
+import api from "./api";
 
 // ===================
 // QUERY MANAGEMENT
 // ===================
-export const getAllQueries = () => api.get('/api/queries');
-export const getQueryDetails = (id) => api.get(`/api/queries/${id}`);
+export const getAllQueries = () => api.get("/api/librarian/queries");
+export const getQueryDetails = (id) => api.get(`/api/librarian/queries/${id}`);
 export const updateQueryStatus = (id, status) =>
-  api.patch(`/api/queries/${id}/status`, { status });
+  api.patch(`/api/librarian/queries/${id}/status`, { status });
 
 // ===================
 // BORROW MANAGEMENT
 // ===================
-export const getAllBorrowRequests = () => api.get('/api/borrow-requests');
+export const getAllBorrowRequests = () =>
+  api.get("/api/librarian/borrow-requests");
+// ✅ Correct (matches your backend)
 export const updateBorrowStatus = (id, status) =>
-  api.patch(`/api/borrow-requests/${id}/status`, { status });
+  api.patch(`/api/librarian/borrow-requests/${id}/status`, { status });
 export const processRenewalRequest = (id, decision) =>
-  api.patch(`/api/renewal-requests/${id}/process`, { decision });
+  api.patch(`/api/librarian/renewal-requests/${id}/process`, { decision });
 
 // ===================
 // BOOK MANAGEMENT (CRUD)
 // ===================
-export const getAllBooks = () => api.get('/api/books');
-export const getBookDetails = (id) => api.get(`/api/books/${id}`);
-export const addBook = (bookData) => api.post('/api/books', bookData);
-export const updateBook = (id, bookData) => api.patch(`/api/books/${id}`, bookData);
-export const deleteBook = (id) => api.delete(`/api/books/${id}`);
+export const getAllBooks = () => api.get("/api/librarian/books");
+export const getBookDetails = (id) => api.get(`/api/librarian/books/${id}`);
+export const addBook = (bookData) => api.post("/api/librarian/books", bookData);
+export const updateBook = (id, bookData) =>
+  api.patch(`/api/librarian/books/${id}`, bookData);
+export const deleteBook = (id) => api.delete(`/api/librarian/books/${id}`);
 
 // ===================
 // NOTIFICATION ROUTES
 // ===================
-export const sendNotification = (data) => api.post('/api/notifications/send', data);
-export const sendOverdueReminders = () => api.post('/api/notifications/overdue-reminders');
-export const sendDueDateReminders = () => api.post('/api/notifications/due-reminders');
+export const sendNotification = (data) =>
+  api.post("/api/librarian/notifications/send", data);
+export const sendOverdueReminders = () =>
+  api.post("/api/librarian/notifications/overdue-reminders");
+export const sendDueDateReminders = () =>
+  api.post("/api/librarian/notifications/due-reminders");
 
 // ===================
 // REPORTS & ANALYTICS
 // ===================
-export const getLibrarianDashboard = () => api.get('/api/dashboard');
-export const getMostBorrowedBooks = () => api.get('/api/reports/most-borrowed');
-export const getOverdueReport = () => api.get('/api/reports/overdue');
-export const getFinesReport = () => api.get('/api/reports/fines');
+export const getLibrarianDashboard = () => api.get("/api/librarian/dashboard");
+export const getMostBorrowedBooks = () =>
+  api.get("/api/librarian/reports/most-borrowed");
+export const getOverdueReport = () => api.get("/api/librarian/reports/overdue");
+export const getFinesReport = () => api.get("/api/librarian/reports/fines");
 
 // ✅ Profile Management
-export const getProfile = () => 
-  api.get('/api/profile');
+export const getProfile = () => api.get("/api/user/profile");
 
-export const updateProfile = (data) => 
-  api.put('/api/profile', data);
+export const updateProfile = (data) => api.put("/api/user/profile", data);
+
 // ✅ Account Management
-export const deleteAccount = () => 
-  api.delete('/api/profile');
+export const deleteAccount = () => api.delete("/api/user/profile");

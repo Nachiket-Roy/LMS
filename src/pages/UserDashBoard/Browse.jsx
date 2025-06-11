@@ -167,7 +167,7 @@ const Browse = () => {
     <div className="bg-transparent pb-20">
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-20 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
+        <div className={`fixed  right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
           ? 'bg-green-100 text-green-800 border border-green-200'
           : 'bg-red-100 text-red-800 border border-red-200'
           }`}>
@@ -183,7 +183,7 @@ const Browse = () => {
       )}
 
       {/* Main content container */}
-      <div className="pt-16 sm:pt-20 px-4 sm:px-6 pb-6 sm:pb-10">
+      <div className="pt-16 sm:pt-10 px-4 sm:px-6 pb-6 sm:pb-10">
         <div className="max-w-7xl mx-auto">
 
           {/* Header */}

@@ -203,8 +203,8 @@ const Query = () => {
                                                                 {formatDate(query.createdAt)}
                                                             </span>
                                                             <span className={`px-2 py-1 rounded-md ${query.status === 'open' ? 'bg-blue-100 text-blue-800' :
-                                                                    query.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                                query.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                                 }`}>
                                                                 {query.status || 'Open'}
                                                             </span>

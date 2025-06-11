@@ -107,11 +107,12 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
         { path: '/user/setting', icon: FaBell, label: 'Setting' },
       ],
       librarian: [
-        { path: '/librarian/add-book', icon: FaPlus, label: 'Add Book' },
-        { path: '/librarian/issued-books', icon: FaClipboardList, label: 'Issued Books' },
-        { path: '/librarian/requests', icon: FaFileAlt, label: 'Book Requests' },
-        { path: '/librarian/users', icon: FaUsers, label: 'Users' },
+        { path: '/librarian/manage', icon: FaPlus, label: 'Manage Books' },
+        { path: '/librarian/requests', icon: FaClipboardList, label: 'Requests' },
+        { path: '/librarian/query', icon: FaQuestion, label: 'Query' },
         { path: '/librarian/reports', icon: FaChartBar, label: 'Reports' },
+        { path: '/librarian/setting', icon: FaCog, label: 'Setting' },
+
       ],
       admin: [
         { path: '/admin/user', icon: FaUsers, label: 'User Management' },
@@ -226,16 +227,14 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
                         setIsSidebarOpen(false);
                       }
                     }}
-                    className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
-                      isActive
-                        ? 'bg-gray-200 text-gray-900 font-medium'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    } ${isLoggingOut ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                    className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
+                      ? 'bg-gray-200 text-gray-900 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      } ${isLoggingOut ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                   >
                     <Icon
-                      className={`text-lg transition-transform duration-200 ${
-                        isActive ? 'scale-110' : 'group-hover:scale-105'
-                      }`}
+                      className={`text-lg transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'
+                        }`}
                     />
                     <span className="text-left">{item.label}</span>
                   </NavLink>
@@ -244,7 +243,7 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
             })}
 
             {/* Logout Button - Functional */}
-            <li>
+            {/* <li>
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
@@ -266,7 +265,7 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
                   {isLoggingOut ? 'Logging out...' : 'Logout'}
                 </span>
               </button>
-            </li>
+            </li> */}
           </ul>
         </nav>
       </div>

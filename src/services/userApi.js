@@ -1,75 +1,63 @@
-import api from './api';
+import api from "./api";
 
 // ✅ Book Management
-export const getAllBooks = (filters = {}) => 
-  api.get('/api/books', { params: filters });
+export const getAllBooks = (filters = {}) =>
+  api.get("/api/user/books", { params: filters });
 
 // ✅ Borrow Management
-export const requestBorrow = (bookId) => 
-  api.post('/api/borrow/request', { book_id: bookId });
+export const requestBorrow = (bookId) =>
+  api.post("/api/user/borrow/request", { book_id: bookId });
 
-// 🔧 FIXED: Changed from '/api/borrows' to '/api/borrow-requests'
 export const getBorrowRequests = (status = null) => {
   const params = status ? { status } : {};
-  return api.get('/api/borrow-requests', { params });
+  return api.get("/api/user/borrow-requests", { params });
 };
 
-export const renewBook = (id) => 
-  api.post(`/api/borrow/renew/${id}`);
+export const renewBook = (id) => api.post(`/api/user/borrow/renew/${id}`);
 
-// 🔧 FIXED: Changed from '/api/overdue' to '/api/overdue-books'
-export const getOverdueBooks = () => 
-  api.get('/api/overdue-books');
+export const getOverdueBooks = () => api.get("/api/user/overdue-books");
 
-export const getReadingHistory = (page = 1, limit = 10) => 
-  api.get('/api/reading-history', { params: { page, limit } });
+export const getReadingHistory = (page = 1, limit = 10) =>
+  api.get("/api/user/reading-history", { params: { page, limit } });
 
 // ✅ Notification Management
-export const getNotifications = (page = 1, limit = 10) => 
-  api.get('/api/notifications', { params: { page, limit } });
+export const getNotifications = (page = 1, limit = 10) =>
+  api.get("/api/user/notifications", { params: { page, limit } });
 
-export const getUnreadCount = () => 
-  api.get('/api/notifications/unread-count');
+export const getUnreadCount = () =>
+  api.get("/api/user/notifications/unread-count");
 
-export const markNotificationAsRead = (id) => 
-  api.put(`/api/notifications/${id}/read`);
+export const markNotificationAsRead = (id) =>
+  api.put(`/api/user/notifications/${id}/read`);
 
-export const markAllAsRead = () => 
-  api.put('/api/notifications/mark-all-read');
+export const markAllAsRead = () =>
+  api.put("/api/user/notifications/mark-all-read");
+// export const getNotificationById = (id) =>
+//   api.get(`/api/user/notifications/${id}`);
 
-// 🔧 FIXED: Changed from '/api/due-soon' to '/api/latest-due-notification'
-export const getLatestDueNotification = () => 
-  api.get('/api/latest-due-notification');
 
-// 🔧 FIXED: Changed from '/api/payments' to '/api/payment-history'
-export const getPaymentHistory = () => 
-  api.get('/api/payment-history');
+export const getLatestDueNotification = () =>
+  api.get("/api/user/latest-due-notification");
+
+export const getPaymentHistory = () => api.get("/api/user/payment-history");
 
 // ✅ Profile Management
-export const getProfile = () => 
-  api.get('/api/profile');
+export const getProfile = () => api.get("/api/user/profile");
 
-export const updateProfile = (data) => 
-  api.put('/api/profile', data);
+export const updateProfile = (data) => api.put("/api/user/profile", data);
 
 // ✅ Dashboard
-export const getDashboardSummary = () => 
-  api.get('/api/dashboard-summary');
+export const getDashboardSummary = () => api.get("/api/user/dashboard-summary");
 
 // ✅ Feedback/Support
-export const submitFeedback = (data) => 
-  api.post('/api/feedback', data);
+export const submitFeedback = (data) => api.post("/api/user/feedback", data);
 
 // ✅ Query Management
-export const getUserQueries = () => 
-  api.get('/api/queries');
+export const getUserQueries = () => api.get("/api/user/queries");
 
-export const getUserQueryById = (id) => 
-  api.get(`/api/queries/${id}`);
+export const getUserQueryById = (id) => api.get(`/api/user/queries/${id}`);
 
-export const deleteUserQuery = (id) => 
-  api.delete(`/api/queries/${id}`);
+export const deleteUserQuery = (id) => api.delete(`/api/user/queries/${id}`);
 
 // ✅ Account Management
-export const deleteAccount = () => 
-  api.delete('/api/profile');
+export const deleteAccount = () => api.delete("/api/user/profile");

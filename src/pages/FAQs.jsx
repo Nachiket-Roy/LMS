@@ -50,7 +50,7 @@ const faqData = [
   {
     id: 5,
     question: 'What are the late fees?',
-    answer: 'Books: $0.25/day, DVDs: $1.00/day, Audiobooks: $0.50/day. Maximum fee per item is $10. Pay online, by phone, or at any library location. We also accept payment plans.',
+    answer: 'Books: ₹5/day. Maximum fee per item is ₹1000. Pay online, by phone, or at any library location. We also accept payment plans.',
     category: 'policies',
     icon: FaExclamationCircle
   },
@@ -64,7 +64,7 @@ const faqData = [
   {
     id: 7,
     question: 'Do you offer printing services?',
-    answer: 'Yes! We have black & white printing ($0.10/page) and color printing ($0.25/page). We also offer scanning, copying, and faxing services. Payment accepted via cash, card, or print credits.',
+    answer: 'Yes! We have black & white printing (₹0.50/page) and color printing (₹5/page). We also offer scanning, copying, and faxing services. Payment accepted via cash, card, or print credits.',
     category: 'services',
     icon: FaCreditCard
   },
@@ -278,24 +278,7 @@ const FAQs = () => {
         </div>
       </main>
 
-      <style jsx>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            max-height: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            max-height: 200px;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-slideDown {
-          animation: slideDown 0.3s ease-out forwards;
-        }
-      `}</style>
+      
     </div>
   );
 };
