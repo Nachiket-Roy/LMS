@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiFilter, FiSearch, FiBook, FiStar, FiCalendar, FiUser, FiBookOpen, FiCheck, FiLoader } from 'react-icons/fi';
 import { requestBorrow, getAllBooks } from '../../services/userApi'; // Your existing API
+import BookCard from '../../components/BookCard';
 
 const PlaceholderBookCover = ({ title, className }) => (
   <div className={`${className} bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-center p-2 rounded shadow-md`}>
@@ -84,11 +85,11 @@ const Browse = () => {
       console.log('Error response:', error.response?.data);
       console.log('Error status:', error.response?.status);
       console.log('Error config:', error.config);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error ||
-                          'Failed to submit borrow request. Please try again.';
-      
+
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Failed to submit borrow request. Please try again.';
+
       showNotification(errorMessage, 'error');
     } finally {
       setBorrowLoading(prev => ({ ...prev, [book_id]: false }));
@@ -167,7 +168,7 @@ const Browse = () => {
     <div className="bg-transparent pb-20">
       {/* Notification */}
       {notification && (
-        <div className={`fixed  right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
           ? 'bg-green-100 text-green-800 border border-green-200'
           : 'bg-red-100 text-red-800 border border-red-200'
           }`}>
@@ -308,121 +309,14 @@ const Browse = () => {
 
           {/* Book Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredBooks.map((book) => {
-              const isAvailable = (book.availableCopies || 0) > 0;
-              const isLoading = borrowLoading[book._id];
-
-              return (
-                <div
-                  key={book._id}
-                  className="bg-white shadow-sm rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group relative flex flex-col"
-                >
-                  <div className="relative overflow-hidden">
-                    {book.coverImagePath || book.coverImage ? (
-                      <img
-                        src={book.coverImagePath || book.coverImage}
-                        alt={book.title}
-                        className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : null}
-                    <PlaceholderBookCover
-                      title={book.title}
-                      className={`w-full h-48 sm:h-56 ${book.coverImagePath ? 'hidden' : ''}`}
-                    />
-                    {/* Availability badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium shadow-sm ${isAvailable
-                        ? 'bg-green-100 text-green-700 border border-green-200'
-                        : 'bg-red-100 text-red-700 border border-red-200'
-                        }`}>
-                        {isAvailable ? `${book.availableCopies} Available` : 'Unavailable'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                    <div className="mb-3 flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                        {book.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-                        <FiUser className="w-4 h-4" />
-                        {book.author}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-3">
-                        {book.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="text-gray-500">Genre</span>
-                        <span className="font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                          {book.genre || 'General'}
-                        </span>
-                      </div>
-
-                      {book.rating && (
-                        <div className="flex items-center justify-between text-xs sm:text-sm">
-                          <span className="text-gray-500">Rating</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-yellow-600">
-                              {book.rating.toFixed(1)}
-                            </span>
-                            <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                          </div>
-                        </div>
-                      )}
-
-                      {book.publishedYear && (
-                        <div className="flex items-center justify-between text-xs sm:text-sm">
-                          <span className="text-gray-500">Published</span>
-                          <span className="font-medium text-gray-700">
-                            {book.publishedYear}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="text-gray-500">Copies</span>
-                        <span className="font-medium text-gray-700">
-                          {book.availableCopies || 0} / {book.totalCopies || 0}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Borrow Button */}
-                    <div className="mt-auto">
-                      <button
-                        onClick={() => handleBorrowRequest(book._id, book.title)}
-                        disabled={!isAvailable || isLoading}
-                        className={`w-full py-3 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${isAvailable && !isLoading
-                          ? 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-md hover:shadow-lg'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
-                      >
-                        {isLoading ? (
-                          <>
-                            <FiLoader className="animate-spin w-4 h-4" />
-                            Requesting...
-                          </>
-                        ) : isAvailable ? (
-                          <>
-                            <FiBookOpen className="w-4 h-4" />
-                            Request Borrow
-                          </>
-                        ) : (
-                          'Unavailable'
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {filteredBooks.map((book) => (
+              <BookCard 
+                key={book._id} 
+                book={book}
+                onBorrowRequest={handleBorrowRequest}
+                borrowLoading={borrowLoading[book._id]}
+              />
+            ))}
           </div>
 
           {/* No results message */}

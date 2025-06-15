@@ -38,10 +38,11 @@ const BorrowNotificationPage = () => {
   const loadBorrowRequests = async () => {
     setLoading(true);
     try {
-      const response = await getAllBorrowRequests();
-      console.log("📥 Borrow Requests Response:", response.data);
+      const statusParam = filterStatus === 'renewal' ? 'renew_requested' : filterStatus;
+      const response = await getAllBorrowRequests(statusParam);
 
       setBorrowRequests(Array.isArray(response.data.data) ? response.data.data : []);
+
 
     } catch (error) {
       setErrorMessage('Failed to load borrow requests');
@@ -50,6 +51,8 @@ const BorrowNotificationPage = () => {
       setLoading(false);
     }
   };
+
+
 
   const handleBorrowStatusUpdate = async (requestId, status) => {
     try {
@@ -80,6 +83,8 @@ const BorrowNotificationPage = () => {
   const handleRenewalRequest = async (requestId, decision) => {
     try {
       await processRenewalRequest(requestId, decision);
+      await loadBorrowRequests(); // ✅ refresh
+
       setSuccessMessage(`Renewal request ${decision.toLowerCase()} successfully`);
       loadBorrowRequests();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -125,23 +130,35 @@ const BorrowNotificationPage = () => {
 
   // Filter borrow requests
   const filteredRequests = borrowRequests.filter(request => {
-    const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'renewal' && request.status === 'renew_requested') ||
+      request.status === filterStatus;
+
     const matchesSearch = !searchTerm ||
       request.user_id?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.book_id?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.user_id?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
     return matchesStatus && matchesSearch;
   });
+
 
   // Get counts for different statuses
   const getStatusCounts = () => {
     return {
-      requested: borrowRequests.filter(req => req.status === 'requested').length,
+      requested: borrowRequests.filter(req =>
+        req.status === 'requested' && !req.renewalRequestDate
+      ).length,
+      renewals: borrowRequests.filter(req =>
+        req.status === 'renew_requested'
+      ).length,
       approved: borrowRequests.filter(req => req.status === 'approved').length,
       returned: borrowRequests.filter(req => req.status === 'returned').length,
       rejected: borrowRequests.filter(req => req.status === 'rejected').length,
     };
   };
+
 
   const statusCounts = getStatusCounts();
 
@@ -189,7 +206,7 @@ const BorrowNotificationPage = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg border border-green-200">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -201,7 +218,19 @@ const BorrowNotificationPage = () => {
             </div>
           </div>
         </div>
-        
+        <div className="bg-white p-4 rounded-lg border border-indigo-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <FaSync className="text-indigo-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-600">Renewals</p>
+              <p className="text-2xl font-bold text-indigo-600">{statusCounts.renewals}</p>
+            </div>
+          </div>
+        </div>
+
+
         <div className="bg-white p-4 rounded-lg border border-blue-200">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -213,7 +242,7 @@ const BorrowNotificationPage = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg border border-red-200">
           <div className="flex items-center">
             <div className="p-2 bg-red-100 rounded-lg">
@@ -293,6 +322,8 @@ const BorrowNotificationPage = () => {
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
                 <option value="returned">Returned</option>
+                <option value="renewal">Renewal</option>
+
               </select>
               <button
                 onClick={loadBorrowRequests}
@@ -501,12 +532,16 @@ const BorrowRequestCard = ({ request, onStatusUpdate, onRenewalProcess }) => {
             <div>
               <p className="text-sm"><strong>Issue Date:</strong> {request.issueDate ? new Date(request.issueDate).toLocaleDateString() : 'N/A'}</p>
               <p className="text-sm">
-                <strong>Due Date:</strong> 
+                <strong>Due Date:</strong>
                 <span className={request.dueDate && isOverdue(request.dueDate) ? 'text-red-600 font-semibold' : ''}>
                   {request.dueDate ? new Date(request.dueDate).toLocaleDateString() : 'N/A'}
                 </span>
               </p>
-              <p className="text-sm"><strong>Request Type:</strong> {request.type || 'Borrow'}</p>
+              {request.renewalRequestDate ? (
+                <p className="text-sm text-blue-600 font-semibold">Renewal Request</p>
+              ) : (
+                <p className="text-sm text-gray-600">Borrow Request</p>
+              )}
             </div>
           </div>
 
@@ -538,16 +573,16 @@ const BorrowRequestCard = ({ request, onStatusUpdate, onRenewalProcess }) => {
               </button>
             )}
 
-            {request.type === 'renewal' && request.status === 'requested' && (
+            {request.status === 'renew_requested' && (
               <>
                 <button
-                  onClick={() => onRenewalProcess(request.id || request._id, 'approved')}
+                  onClick={() => onRenewalProcess(requestId, 'approve')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center"
                 >
                   <FaCheck className="mr-1" /> Approve Renewal
                 </button>
                 <button
-                  onClick={() => onRenewalProcess(request.id || request._id, 'rejected')}
+                  onClick={() => onRenewalProcess(requestId, 'reject')}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center"
                 >
                   <FaTimes className="mr-1" /> Reject Renewal
@@ -555,6 +590,7 @@ const BorrowRequestCard = ({ request, onStatusUpdate, onRenewalProcess }) => {
               </>
             )}
           </div>
+
         </div>
       )}
     </div>

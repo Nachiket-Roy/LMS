@@ -20,7 +20,9 @@ import {
   FaBell,
   FaSearch,
   FaPlus,
-  FaQuestion
+  FaQuestion,
+  FaCogs,
+  FaDollarSign
 } from 'react-icons/fa';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -102,7 +104,7 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
       user: [
         { path: '/user/browse', icon: FaBook, label: 'Browse Books' },
         { path: '/user/mybooks', icon: FaBookmark, label: 'My Books' },
-        { path: '/user/fine', icon: FaShoppingCart, label: 'Fine & Reports' },
+        { path: '/user/fine', icon: FaDollarSign, label: 'Fine & Reports' },
         { path: '/user/query', icon: FaQuestion, label: 'Queries' },
         { path: '/user/setting', icon: FaBell, label: 'Setting' },
       ],
@@ -116,9 +118,9 @@ const Sidebar = ({ role = 'user', isSidebarOpen, setIsSidebarOpen }) => {
       ],
       admin: [
         { path: '/admin/user', icon: FaUsers, label: 'User Management' },
-        { path: '/admin/librarian', icon: FaUserShield, label: 'Librarians' },
-        { path: '/admin/reports', icon: FaChartBar, label: 'Reports' },
-        { path: '/admin/add-book', icon: FaPlus, label: 'Add Book' },
+        { path: '/admin/query', icon: FaQuestion, label: 'Query' },
+        { path: '/admin/fine', icon: FaDollarSign, label: 'Fine & Payment' },
+        { path: '/admin/setting', icon: FaCog, label: 'Setting' },
       ]
     };
 

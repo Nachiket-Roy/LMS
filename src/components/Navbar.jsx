@@ -7,7 +7,7 @@ import { getProfile as getLibrarianProfile } from '../services/librarianApi';
 import { getProfile as getAdminProfile } from '../services/adminApi';
 import { useAuth } from '../contexts/AuthContext';
 
-const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
+const Navbar = ({ onAuthClick, onSidebarToggle }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -19,16 +19,17 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
   // Get current location to determine if we're on home page
   const location = useLocation();
   const isHomePage = location.pathname === '/' || location.pathname === '/home';
-  const { logout } = useAuth();
+  const { user, isAuthenticated, logout, authInitialized } = useAuth();
+  const role = userProfile?.role || user?.role || (authInitialized ? "guest" : null);
   // Fetch user profile data based on role
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (role === 'guest') return;
+      if (!isAuthenticated || !user?.role) return;
 
       setLoading(true);
       try {
         let res;
-        switch (role) {
+        switch (user.role) {
           case 'user':
             res = await getProfile();
             break;
@@ -45,19 +46,19 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
         if (res.data?.success && res.data?.data) {
           setUserProfile(res.data.data);
         } else {
-          console.warn('No valid profile data received');
           setUserProfile(null);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
         setUserProfile(null);
       } finally {
-        setLoading(false); // ✅ always run this
+        setLoading(false);
       }
     };
 
     fetchUserProfile();
-  }, [role]);
+  }, [isAuthenticated, user]);
+
 
 
   const handleClose = () => setIsAuthModalOpen(false);
@@ -420,8 +421,8 @@ const Navbar = ({ role = 'guest', onAuthClick, onSidebarToggle }) => {
                         onClick={handleLogout}
                         disabled={isLoggingOut}
                         className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${(isHomePage && !isScrolled)
-                            ? 'text-red-400 hover:bg-red-500/10'
-                            : 'text-red-600 hover:bg-red-50'
+                          ? 'text-red-400 hover:bg-red-500/10'
+                          : 'text-red-600 hover:bg-red-50'
                           } ${isLoggingOut ? 'opacity-50' : ''}`}
                       >
                         {isLoggingOut ? (

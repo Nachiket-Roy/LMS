@@ -17,6 +17,7 @@ import {
   FaBell,
   FaTimes,
   FaCheck,
+  FaQuestion,
 } from 'react-icons/fa';
 import { FiLoader, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
 import { NavLink } from 'react-router-dom';
@@ -601,11 +602,11 @@ const LibrarianDashboard = () => {
                 <span className="text-sm">Inventory</span>
               </NavLink>
               <NavLink
-                to="/librarian/fines"
+                to="/librarian/query"
                 className="flex flex-col items-center justify-center bg-white text-blue-600 px-4 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg"
               >
-                <FaDollarSign className="h-6 w-6 mb-1" />
-                <span className="text-sm">Fines</span>
+                <FaQuestion className="h-6 w-6 mb-1" />
+                <span className="text-sm">Query</span>
               </NavLink>
               <NavLink
                 to="/librarian/query"

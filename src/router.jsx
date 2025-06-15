@@ -18,23 +18,25 @@ import LibrarianDashboard from './pages/Librarian/Librarian';
 import ReportsPage from './pages/Librarian/Report';
 import AdminDashboard from './pages/Admin/Admin';
 import UserManagement from './pages/Admin/UserManagement';
-import LibrarianManagement from './pages/Admin/LibrarianManagement';
 import Query from './pages/UserDashBoard/Query';
 import LibrarianSettingsPage from './pages/Librarian/Setting';
 import QueryManagement from './pages/Librarian/QueryManagement';
 import BookManagementPage from './pages/Librarian/BookManagement';
 import BorrowNotificationPage from './pages/Librarian/BorrowNotificationPage';
-
+import PublicOnlyRoute from './components/PublicOnlyRoutes';
+import AdminQueryManagement from './pages/Admin/QueryManagement';
+import AdminSettingsPage from './pages/Admin/Setting';
+import AdminFinesPayments from './pages/Admin/Fines&Payments';
 const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
     children: [
-      { path: '/', element: <Home /> },
-      { path: '/about', element: <About /> },
-      { path: '/contact', element: <Contact /> },
-      { path: '/faqs', element: <FAQs /> },
-      { path: '/collection', element: <Collection /> },
+      { path: '/', element: <PublicOnlyRoute><Home /></PublicOnlyRoute> },
+      { path: '/about', element: <PublicOnlyRoute><About /></PublicOnlyRoute> },
+      { path: '/contact', element: <PublicOnlyRoute><Contact /></PublicOnlyRoute> },
+      { path: '/faqs', element: <PublicOnlyRoute><FAQs /></PublicOnlyRoute> },
+      { path: '/collection', element: <PublicOnlyRoute><Collection /></PublicOnlyRoute> },
     ]
   },
   {
@@ -87,8 +89,12 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
-      { path: 'users', element: <UserManagement /> },
-      { path: 'librarians', element: <LibrarianManagement /> }
+      { path: 'user', element: <UserManagement /> },
+      { path: 'query', element: <AdminQueryManagement /> },
+      { path: 'setting', element: <AdminSettingsPage /> },
+      { path: 'fine', element: <AdminFinesPayments /> }
+
+
     ]
   }
 ]);

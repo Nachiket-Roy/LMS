@@ -171,7 +171,7 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
         }
       } else if (currentMode === 'forgot') {
         // TODO: Implement forgot password API call
-        alert('Password reset instructions have been sent to your email!');
+        alert('Password is not functional currently contact admin');
         setCurrentMode('login');
       }
     } catch (err) {
@@ -523,7 +523,6 @@ const LoginRegisterCard = ({ onClose = () => {}, initialMode = 'login' }) => {
           <div className="mt-8 relative z-10">
             <div className="flex items-center justify-center mb-6">
               <div className="border-t border-white/20 flex-grow"></div>
-              <span className="px-4 text-gray-400 text-sm">or continue with</span>
               <div className="border-t border-white/20 flex-grow"></div>
             </div>
             {/* Social buttons can be added here */}

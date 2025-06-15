@@ -2,39 +2,20 @@ import { useState, useEffect } from 'react';
 import {
   FaBook,
   FaBookOpen,
-  FaHeart,
   FaHistory,
   FaRedo,
-  FaCalendarAlt,
   FaClock,
   FaExclamationTriangle,
   FaCheckCircle,
   FaSearch,
-  FaFilter,
-  FaEye,
   FaStar,
   FaStarHalfAlt,
   FaRegStar,
   FaTh,
   FaList,
-  FaDownload,
-  FaShareAlt,
   FaTimes,
-  FaPlus,
-  FaBookmark,
-  FaTag,
-  FaTimesCircle,
   FaSpinner
 } from 'react-icons/fa';
-
-// CSS-based placeholder component that works everywhere
-const PlaceholderBookCover = ({ title, className }) => (
-  <div className={`${className} bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-center p-2 rounded shadow-md`}>
-    <div className="text-xs leading-tight break-words">
-      {title ? (title.length > 15 ? title.substring(0, 15) + '...' : title) : 'Book'}
-    </div>
-  </div>
-);
 
 // Import your API functions - replace with your actual import paths
 import {
@@ -49,9 +30,7 @@ const MyBooksPage = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [viewMode, setViewMode] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterGenre, setFilterGenre] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedBooks, setSelectedBooks] = useState([]);
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [bookToRenew, setBookToRenew] = useState(null);
   const [renewLoading, setRenewLoading] = useState(false);
@@ -69,6 +48,16 @@ const MyBooksPage = () => {
   useEffect(() => {
     loadAllData();
   }, []);
+  useEffect(() => {
+  if (currentBooks.length > 0) {
+    console.log('First current book:', currentBooks[0]);
+    console.log('Image path:', currentBooks[0].book_id?.coverImagePath);
+  }
+  if (readingHistory.length > 0) {
+    console.log('First history book:', readingHistory[0]);
+    console.log('Image path:', readingHistory[0].book_id?.coverImagePath);
+  }
+}, [currentBooks, readingHistory]);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -84,16 +73,15 @@ const MyBooksPage = () => {
 
     try {
       const [borrowsRes, overdueRes, historyRes, paymentsRes] = await Promise.allSettled([
-        getBorrowRequests(), // Get all borrow requests
-        getOverdueBooks(), // Get overdue books
-        getReadingHistory(), // Get reading history
-        getPaymentHistory() // Get payment history
+        getBorrowRequests(),
+        getOverdueBooks(),
+        getReadingHistory(),
+        getPaymentHistory()
       ]);
 
       // Process borrow requests - filter for current books
       if (borrowsRes.status === 'fulfilled') {
         const allBorrows = borrowsRes.value.data?.data || [];
-        // Filter current books (not returned) - matching your backend statuses
         const current = allBorrows.filter(book =>
           ['approved', 'issued', 'borrowed', 'renewed', 'renew_requested', 'requested'].includes(book.status)
         );
@@ -144,23 +132,21 @@ const MyBooksPage = () => {
     try {
       const response = await renewBook(book._id);
 
-      // Log the full response for debugging
-      console.log('Renewal API Response:', response);
-
-      if (!response?.success) {
-        // Handle cases where response.message is missing
-        const errorMsg = response?.message || 'Renewal request submitted (pending approval)';
-        console.warn('Renewal submission note:', errorMsg);
+      if (response?.success) {
+        setSuccessMessage('Renewal request submitted successfully!');
+      } else {
+        setSuccessMessage('Renewal request submitted (pending approval)');
       }
 
-      // Silently refresh data (no UI message)
+      // Refresh data
       await loadAllData();
     } catch (err) {
       console.error('Renewal failed:', err);
 
-      // Only show network errors to the user
       if (err.message === "Network Error") {
         setError("Network issue. Please check your connection.");
+      } else {
+        setError("Failed to submit renewal request. Please try again.");
       }
 
       // Revert optimistic update
@@ -174,38 +160,11 @@ const MyBooksPage = () => {
       setShowRenewModal(false);
     }
   };
+
   const confirmRenewal = () => {
     if (bookToRenew) {
       handleRenewBook(bookToRenew);
     }
-  };
-
-  const renderStars = (rating) => {
-    if (!rating) return <span className="text-gray-400 text-sm">Not rated</span>;
-
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<FaStar key={i} className="text-yellow-400" />);
-    }
-
-    if (hasHalfStar) {
-      stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
-    }
-
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<FaRegStar key={`empty-${i}`} className="text-gray-300" />);
-    }
-
-    return (
-      <div className="flex items-center">
-        {stars}
-        <span className="ml-1 text-sm text-gray-600">({rating}/5)</span>
-      </div>
-    );
   };
 
   const getStatusBadge = (book) => {
@@ -214,15 +173,8 @@ const MyBooksPage = () => {
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-    // Handle different statuses from your backend
     switch (book.status) {
       case 'renew_requested':
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <FaClock className="mr-1" />
-            Renewal Requested
-          </span>
-        );
       case 'requested':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -310,7 +262,6 @@ const MyBooksPage = () => {
     return uniqueBooks;
   };
 
-
   const filteredBooks = () => {
     let books = activeTab === 'current' ? getCurrentBooks() : readingHistory;
 
@@ -337,51 +288,58 @@ const MyBooksPage = () => {
   const renderBookCard = (book) => {
     const isGridView = viewMode === 'grid';
     const bookInfo = book.book_id || {};
+    const canRenew = book.status !== 'renew_requested' && book.status !== 'requested';
 
     return (
-      <div key={book._id} className={`bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 ${isGridView ? 'p-4' : 'p-4 flex items-start space-x-4'
-        }`}>
+      <div key={book._id} className={`bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 ${
+        isGridView ? 'p-4' : 'p-4 flex items-start space-x-4'
+      }`}>
         <div className={`${isGridView ? 'mb-4' : 'flex-shrink-0'}`}>
           {bookInfo.coverImagePath ? (
             <img
               src={bookInfo.coverImagePath}
               alt={bookInfo.title || 'Book'}
-              className={`rounded shadow-sm ${isGridView ? 'w-full h-48 object-cover' : 'w-16 h-24 object-cover'}`}
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
-              }}
+              className={`rounded shadow-sm ${
+                isGridView ? 'w-full h-48 object-cover' : 'w-16 h-24 object-cover'
+              }`}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
-          ) : null}
-          <PlaceholderBookCover
-            title={bookInfo.title}
-            className={`${isGridView ? 'w-full h-48' : 'w-16 h-24'} ${bookInfo.coverImagePath ? 'hidden' : ''}`}
-          />
+          ) : (
+            <div className={`bg-gray-200 rounded flex items-center justify-center ${
+              isGridView ? 'w-full h-48' : 'w-16 h-24'
+            }`}>
+              <FaBook className="text-gray-400 text-2xl" />
+            </div>
+          )}
         </div>
 
         <div className={`${isGridView ? '' : 'flex-1 min-w-0'}`}>
-          <h3 className={`font-semibold text-gray-900 ${isGridView ? 'text-lg mb-1' : 'text-base mb-1'} truncate`}>
+          <h3 className={`font-semibold text-gray-900 ${
+            isGridView ? 'text-lg mb-1' : 'text-base mb-1'
+          } truncate`}>
             {bookInfo.title || 'Unknown Title'}
           </h3>
-          <p className="text-gray-600 text-sm mb-2 truncate">{bookInfo.author || 'Unknown Author'}</p>
+          <p className="text-gray-600 text-sm mb-2 truncate">
+            {bookInfo.author || 'Unknown Author'}
+          </p>
 
           {activeTab === 'current' && (
             <>
-              {getStatusBadge(book)}
-              <div className="mt-3 flex justify-between text-xs text-gray-500">
+              <div className="mb-3">{getStatusBadge(book)}</div>
+              <div className="flex justify-between text-xs text-gray-500 mb-3">
                 <span>Due: {formatDate(book.dueDate)}</span>
                 <span className="capitalize">{book.status.replace('_', ' ')}</span>
               </div>
-              {book.status !== 'renew_requested' && book.status !== 'requested' && (
+              {canRenew && (
                 <button
                   onClick={() => {
                     setBookToRenew(book);
                     setShowRenewModal(true);
                   }}
                   disabled={renewLoading}
-                  className="mt-2 w-full bg-blue-600 text-white py-2 px-4 rounded text-xs hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded text-xs hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  <FaRedo className="inline mr-1" />
+                  <FaRedo className="mr-1" />
                   {renewLoading ? 'Processing...' : 'Request Renewal'}
                 </button>
               )}
@@ -391,7 +349,7 @@ const MyBooksPage = () => {
           {activeTab === 'history' && (
             <div className="text-xs text-gray-500">
               <p>Borrowed: {formatDate(book.borrowDate || book.createdAt)}</p>
-              <p>Returned: {formatDate(book.returnDate)}</p>
+              {book.returnDate && <p>Returned: {formatDate(book.returnDate)}</p>}
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-2 ${getHistoryStatusColor(book.status)}`}>
                 {getHistoryStatusIcon(book.status)}
                 <span className="ml-1">{book.status.charAt(0).toUpperCase() + book.status.slice(1)}</span>
@@ -469,15 +427,13 @@ const MyBooksPage = () => {
       )}
 
       {/* Header */}
-      <div className="">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <FaBook className="mr-3 text-blue-600" />
-              My Library
-            </h1>
-            <p className="mt-2 text-gray-600">Manage your reading journey</p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-6">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <FaBook className="mr-3 text-blue-600" />
+            My Library
+          </h1>
+          <p className="mt-2 text-gray-600">Manage your reading journey</p>
         </div>
       </div>
 
@@ -502,10 +458,11 @@ const MyBooksPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`${activeTab === tab.id
+                className={`${
+                  activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <tab.icon />
                 <span>{tab.name}</span>
@@ -557,13 +514,17 @@ const MyBooksPage = () => {
             <div className="flex border border-gray-300 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'bg-white text-gray-600'}`}
+                className={`p-2 ${
+                  viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'bg-white text-gray-600'
+                }`}
               >
                 <FaTh />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'bg-white text-gray-600'}`}
+                className={`p-2 ${
+                  viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'bg-white text-gray-600'
+                }`}
               >
                 <FaList />
               </button>

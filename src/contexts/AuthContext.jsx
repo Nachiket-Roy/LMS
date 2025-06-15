@@ -15,11 +15,12 @@ const authReducer = (state, action) => {
     case 'LOGIN_SUCCESS':
       return {
         ...state,
-        loading: false,
-        isAuthenticated: true,
         user: action.payload.user,
-        error: null
+        isAuthenticated: true,
+        loading: false,
+        authInitialized: true
       };
+
     case 'LOGIN_FAILURE':
       return {
         ...state,
@@ -31,11 +32,12 @@ const authReducer = (state, action) => {
     case 'LOGOUT':
       return {
         ...state,
-        loading: false,
-        isAuthenticated: false,
         user: null,
-        error: null
+        isAuthenticated: false,
+        loading: false,
+        authInitialized: true
       };
+
     case 'SET_LOADING':
       return {
         ...state,
@@ -51,6 +53,12 @@ const authReducer = (state, action) => {
         ...state,
         user: { ...state.user, ...action.payload }
       };
+    case 'SET_AUTH_INITIALIZED':
+      return {
+        ...state,
+        authInitialized: action.payload
+      };
+
     default:
       return state;
   }
@@ -60,8 +68,10 @@ const initialState = {
   user: null,
   isAuthenticated: false,
   loading: true,
+  authInitialized: false,
   error: null
 };
+
 
 // Auth Provider Component
 export const AuthProvider = ({ children }) => {
@@ -69,43 +79,25 @@ export const AuthProvider = ({ children }) => {
 
   // Check authentication status on app load
   const initializeAuth = useCallback(async () => {
-    const publicRoutes = ['/', '/about', '/contact', '/faqs', '/collection'];
-    const currentPath = window.location.pathname;
-    const hasAccessToken = document.cookie.includes('accessToken=');
-
-    // Skip only if no token AND on a public route
-    if (publicRoutes.includes(currentPath) && !hasAccessToken) {
-      dispatch({ type: 'SET_LOADING', payload: false });
-      return;
-    }
+    dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
       const userData = await authApi.checkAuth();
 
       if (userData?.user) {
-        dispatch({
-          type: 'LOGIN_SUCCESS',
-          payload: { user: userData.user }
-        });
-
-        // If logged in and on public route, redirect based on role
-        if (publicRoutes.includes(currentPath)) {
-          const role = userData.user.role;
-          if (role === 'user') window.location.href = '/user';
-          else if (role === 'librarian') window.location.href = '/librarian';
-          else if (role === 'admin') window.location.href = '/admin';
-        }
+        dispatch({ type: 'LOGIN_SUCCESS', payload: { user: userData.user } });
       } else {
         dispatch({ type: 'LOGOUT' });
       }
     } catch (error) {
-      console.error('Auth initialization failed:', error);
+      console.error('[Auth] Auth check failed:', error);
       dispatch({ type: 'LOGOUT' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: 'SET_AUTH_INITIALIZED', payload: true }); // ✅ Mark init done
     }
   }, []);
+
 
   // Initialize auth on mount
   useEffect(() => {
@@ -113,9 +105,11 @@ export const AuthProvider = ({ children }) => {
   }, [initializeAuth]);
 
   const checkAuthStatus = useCallback(async () => {
+    console.log("Checking auth status...");
     try {
       const userData = await authApi.checkAuth();
       if (userData?.user) {
+        console.log("User fetched:", userData.user);
         dispatch({
           type: 'LOGIN_SUCCESS',
           payload: { user: userData.user }
@@ -128,6 +122,7 @@ export const AuthProvider = ({ children }) => {
       logout();
     }
   }, []);
+
 
   const login = useCallback(async (credentials) => {
     try {
@@ -236,10 +231,14 @@ export const useAuth = () => {
 // Enhanced HOC for protected routes with role-based access
 export const withAuth = (WrappedComponent, { allowedRoles = [], redirectTo = '/' } = {}) => {
   return (props) => {
-    const { isAuthenticated, user, loading } = useAuth();
+    const { isAuthenticated, user, loading, authInitialized } = useAuth();
 
     if (loading) {
       return <div className="auth-loading">Checking authentication...</div>;
+    }
+
+    if (!authInitialized) {
+      return loadingComponent; // or null
     }
 
     if (!isAuthenticated) {

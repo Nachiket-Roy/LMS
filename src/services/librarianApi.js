@@ -11,18 +11,23 @@ export const updateQueryStatus = (id, status) =>
 // ===================
 // BORROW MANAGEMENT
 // ===================
-export const getAllBorrowRequests = () =>
-  api.get("/api/librarian/borrow-requests");
+export const getAllBorrowRequests = (status = 'all') => {
+  const url = status === 'all'
+    ? '/api/librarian/borrow-requests'
+    : `/api/librarian/borrow-requests?status=${status}`;
+  return api.get(url);
+};
+
 // ✅ Correct (matches your backend)
 export const updateBorrowStatus = (id, status) =>
   api.patch(`/api/librarian/borrow-requests/${id}/status`, { status });
-export const processRenewalRequest = (id, decision) =>
-  api.patch(`/api/librarian/renewal-requests/${id}/process`, { decision });
+export const processRenewalRequest = (id, action) =>
+  api.patch(`/api/librarian/renewal-requests/${id}/process`, { action });
 
 // ===================
 // BOOK MANAGEMENT (CRUD)
 // ===================
-export const getAllBooks = () => api.get("/api/librarian/books");
+export const getAllBooks = () => api.get("/api/user/books");
 export const getBookDetails = (id) => api.get(`/api/librarian/books/${id}`);
 export const addBook = (bookData) => api.post("/api/librarian/books", bookData);
 export const updateBook = (id, bookData) =>

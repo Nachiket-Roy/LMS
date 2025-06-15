@@ -31,3 +31,16 @@ export const updateProfile = (data) => api.put("/api/user/profile", data);
 
 // ✅ Account Management
 export const deleteAccount = () => api.delete("/api/user/profile");
+
+// ==================== Query =================
+
+export const getAllQueries = () => api.get("/api/librarian/queries");
+export const getQueryDetails = (id) => api.get(`/api/librarian/queries/${id}`);
+export const updateQueryStatus = (id, status) =>
+api.patch(`/api/librarian/queries/${id}/status`, { status });
+
+// ================== fines and payments ===========
+
+export const getAllFines = () => api.get("/api/admin/fines");
+export const getAllPayments = () => api.get("/api/admin/payments")
+export const getOverdueReport = () => api.get("/api/librarian/reports/overdue");

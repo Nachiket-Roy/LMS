@@ -236,35 +236,25 @@ const FinesPaymentsPage = () => {
   };
 
   const handlePayment = async (paymentMethod) => {
-    try {
-      setProcessingPayment(true);
+  try {
+    // Show alert instead of processing
+    alert('⚠️ No payment system available. Please contact the library or admin.');
 
-      // Here you would integrate with your payment API
-      // For now, we'll simulate the payment process
-      console.log('Processing payment:', {
-        fineIds: selectedFines,
-        method: paymentMethod,
-        amount: getSelectedTotal()
-      });
+    // Optional: still close modal if needed
+    setShowPaymentModal(false);
+    setSelectedFines([]);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  } catch (err) {
+    console.error('Payment error:', err);
+    setError('Payment failed. Please try again.');
+  } finally {
+    setProcessingPayment(false);
+  }
+};
 
-      // Close modal and refresh data
-      setShowPaymentModal(false);
-      setSelectedFines([]);
-      await fetchAllData(); // Refresh data after payment
-
-    } catch (err) {
-      console.error('Payment error:', err);
-      setError('Payment failed. Please try again.');
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
 
   const PaymentModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-800/60 via-gray-900/60 to-black/70 backdrop-blur-md  flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Payment Options</h3>

@@ -1,21 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   FaEnvelope,
   FaPhone,
   FaMapMarkerAlt,
   FaClock,
-  FaUser,
-  FaComment,
-  FaPaperPlane,
-  FaCheck,
+  FaSignInAlt,
   FaFacebook,
   FaTwitter,
   FaInstagram,
   FaLinkedin,
-  FaHeadset,
-  FaInfoCircle,
-  FaQuestionCircle,
-  FaBug
+  FaCommentDots,
+  FaUserCircle
 } from 'react-icons/fa';
 
 const contactMethods = [
@@ -45,14 +40,6 @@ const contactMethods = [
   }
 ];
 
-const inquiryTypes = [
-  { value: 'general', label: 'General Information', icon: FaInfoCircle },
-  { value: 'support', label: 'Technical Support', icon: FaHeadset },
-  { value: 'question', label: 'Library Services', icon: FaQuestionCircle },
-  { value: 'feedback', label: 'Feedback/Suggestions', icon: FaComment },
-  { value: 'bug', label: 'Report an Issue', icon: FaBug }
-];
-
 const socialLinks = [
   { icon: FaFacebook, url: '#', color: 'hover:text-blue-600' },
   { icon: FaTwitter, url: '#', color: 'hover:text-blue-400' },
@@ -61,80 +48,12 @@ const socialLinks = [
 ];
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    inquiryType: 'general',
-    subject: '',
-    message: ''
-  });
-
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setIsSubmitted(true);
-    setIsSubmitting(false);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      inquiryType: 'general',
-      subject: '',
-      message: ''
-    });
-    setIsSubmitted(false);
-    setErrors({});
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Header */}
       <header className="bg-gradient-to-br from-black via-[#0B0B0B] to-[#1a1a1a] text-white py-1">
-        <div className="max-w-7xl mx-auto px-4 pt-20 pb-4 text-center ">
+        <div className="max-w-7xl mx-auto px-4 pt-20 pb-4 text-center">
           <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mb-6">
             Get in Touch
           </h1>
@@ -158,7 +77,6 @@ const Contact = () => {
             {contactMethods.map((method, index) => {
               const IconComponent = method.icon;
               return (
-
                 <div key={index} className="bg-white rounded-2xl shadow-xl p-8 text-center hover:transform hover:scale-105 transition-all duration-300">
                   <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${method.color} rounded-full mb-6`}>
                     <IconComponent className="text-2xl text-white" />
@@ -174,165 +92,54 @@ const Contact = () => {
         </section>
 
         <div className="grid lg:grid-cols-3 gap-12">
-          {/* Contact Form */}
+          {/* Login Message Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-8 py-6 border-b">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-                  <FaPaperPlane className="text-indigo-600" />
-                  Send Us a Message
+                  <FaCommentDots className="text-indigo-600" />
+                  Send Us a Message Online
                 </h2>
-                <p className="text-gray-600 mt-2">Fill out the form below and we'll get back to you as soon as possible.</p>
+                <p className="text-gray-600 mt-2">Access our online messaging system to get personalized support.</p>
               </div>
 
-              <div className="p-8">
-                {isSubmitted ? (
-                  <div className="text-center py-12">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
-                      <FaCheck className="text-3xl text-green-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Message Sent Successfully!</h3>
-                    <p className="text-gray-600 mb-8 text-lg">
-                      Thank you for contacting us. We've received your message and will respond within 24 hours.
-                    </p>
-                    <button
-                      onClick={resetForm}
-                      className="bg-indigo-600 text-white px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors font-semibold"
-                    >
-                      Send Another Message
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Name and Email Row */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          <FaUser className="inline mr-2" />
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'
-                            }`}
-                          placeholder="Enter your full name"
-                        />
-                        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                      </div>
+              <div className="p-8 text-center">
+                <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full mb-8">
+                  <FaUserCircle className="text-4xl text-indigo-600" />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">Login Required</h3>
+                <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-md mx-auto">
+                  To send us a message through our online system, please log in to your library account. This helps us provide you with personalized assistance and track your inquiries.
+                </p>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          <FaEnvelope className="inline mr-2" />
-                          Email Address *
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${errors.email ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'
-                            }`}
-                          placeholder="Enter your email address"
-                        />
-                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                      </div>
-                    </div>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8">
+                  <h4 className="font-semibold text-gray-800 mb-3">Benefits of logging in:</h4>
+                  <ul className="text-gray-600 space-y-2 text-left max-w-sm mx-auto">
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      Track your message history
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      Faster response times
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      Access to account-specific help
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      Secure communication
+                    </li>
+                  </ul>
+                </div>
 
-                    {/* Phone and Inquiry Type Row */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          <FaPhone className="inline mr-2" />
-                          Phone Number (Optional)
-                        </label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
-                          placeholder="Enter your phone number"
-                        />
-                      </div>
+                
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          <FaQuestionCircle className="inline mr-2" />
-                          Inquiry Type
-                        </label>
-                        <select
-                          name="inquiryType"
-                          value={formData.inquiryType}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors bg-white"
-                        >
-                          {inquiryTypes.map(type => (
-                            <option key={type.value} value={type.value}>{type.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Subject */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        <FaInfoCircle className="inline mr-2" />
-                        Subject *
-                      </label>
-                      <input
-                        type="text"
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${errors.subject ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'
-                          }`}
-                        placeholder="Brief description of your inquiry"
-                      />
-                      {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject}</p>}
-                    </div>
-
-                    {/* Message */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        <FaComment className="inline mr-2" />
-                        Message *
-                      </label>
-                      <textarea
-                        name="message"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        rows={6}
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors resize-none ${errors.message ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'
-                          }`}
-                        placeholder="Please provide details about your inquiry..."
-                      />
-                      {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message}</p>}
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      onClick={handleFormSubmit}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-semibold text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          Sending Message...
-                        </>
-                      ) : (
-                        <>
-                          <FaPaperPlane />
-                          Send Message
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
+                <p className="text-gray-500 text-sm mt-6">
+                  Don't have an account? Contact us via phone or email to get started.
+                </p>
               </div>
             </div>
           </div>
@@ -361,8 +168,17 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* Quick Links */}
-
+            {/* Need Help Now? */}
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl shadow-xl p-8 border border-orange-100">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Need Help Now?</h3>
+              <p className="text-gray-600 mb-4">
+                For immediate assistance, call us directly or visit our library location during business hours.
+              </p>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">📞 (555) 123-4567</p>
+                <p className="text-sm font-semibold text-gray-700">✉️ support@library.org</p>
+              </div>
+            </div>
 
             {/* Social Media */}
             <div className="bg-white rounded-2xl shadow-xl p-8">

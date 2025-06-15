@@ -1,6 +1,7 @@
 import { FaBook, FaBookOpen, FaBookReader, FaSearch, FaUsers, FaChartLine, FaStar, FaHeart, FaBookmark } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
 import { useCallback } from "react";
+import { NavLink } from "react-router-dom";
 
 export default function HeroSection() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -200,10 +201,11 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Show on medium and large devices */}
             <div className="hidden md:flex flex-col sm:flex-row gap-4">
-              <button className="group relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-4 rounded-2xl font-semibold shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-orange-500/25">
+              <NavLink
+              to="/collection" className="group relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-4 rounded-2xl font-semibold shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-orange-500/25">
                 <span className="relative z-10">Search our collection</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-500 rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
-              </button>
+              </NavLink>
             </div>
 
             {/* Show on small devices only */}
