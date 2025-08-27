@@ -1,12 +1,80 @@
-# React + Vite
+# 📚 Library Management System (LMS) [checkout backend @ https://github.com/Nachiket-Roy/LMS-Backend]
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack **Library Management System (LMS)** built with **Node.js, Express, MongoDB, and React.js**.
+It allows librarians and users to manage books, borrowing, payments, and notifications in a digital library environment.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* 👤 **Authentication & Authorization**
 
-## Expanding the ESLint configuration
+  * User registration & login (with JWT/Passport).
+  * Admin, librarian, and user roles.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* 📖 **Book Management**
+
+  * Add, update, delete, and search books.
+  * Track available and borrowed copies.
+
+* 📦 **Borrow & Return System**
+
+  * Borrow and return books.
+  * Auto-update availability status.
+
+* 🔔 **Notifications**
+
+  * Alerts for due dates, late fees, and reservations.
+
+* 💳 **Payments**
+
+  * Fine management & payment records.
+
+---
+
+
+## ⚙️ Installation & Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Nachiket_Roy/LMS-Backend.git
+cd LMS-Backend
+```
+
+### 2. Backend Setup
+
+```bash
+
+npm install
+```
+
+* Create a `.env` file:
+
+```env
+PORT = 3000
+MONGODB = 
+JWT_SECRET= 
+JWT_REFRESH_SECRET = 
+```
+Make sure to use your own credentials.
+
+* Run backend:
+
+```bash
+nodemon server.js or node server.js
+```
+
+### 3. Frontend Setup
+
+```bash
+git clone https://github.com/Nachiket-Roy/LMS
+npm install
+npm run dev
+```
+
+---
+
+
+
+
+
+👉 Would you like me to **make this README more professional (for GitHub)** with badges (e.g., build, license, tech stack) and a table of contents, or keep it **minimal (for college submission/personal use)**?
