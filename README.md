@@ -77,4 +77,3 @@ npm run dev
 
 
 
-👉 Would you like me to **make this README more professional (for GitHub)** with badges (e.g., build, license, tech stack) and a table of contents, or keep it **minimal (for college submission/personal use)**?
