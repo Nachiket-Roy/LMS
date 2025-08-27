@@ -60,6 +60,7 @@ Make sure to use your own credentials.
 * Run backend:
 
 ```bash
+node seed.js 
 nodemon server.js or node server.js
 ```
 
